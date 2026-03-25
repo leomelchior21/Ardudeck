@@ -175,7 +175,14 @@ export function CircuitPanel() {
 
             {sensors.length > 0 && (
               <>
-                <div className="dotted-sep" />
+                {/* Dotted separator matching the reference: ".. Sensors ........" */}
+                <div style={{
+                  fontFamily: 'var(--font-pixel)', fontSize: 8, color: '#666',
+                  margin: '12px 0 8px', display: 'flex', alignItems: 'center', gap: 6,
+                }}>
+                  <span style={{ whiteSpace: 'nowrap' }}>.. Sensors</span>
+                  <span style={{ flex: 1, borderBottom: '2px dotted #2d2d2d', display: 'inline-block', marginBottom: 2 }} />
+                </div>
                 <SectionLabel color="#4a9eff">Sensors</SectionLabel>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {sensors.map(comp => (
@@ -228,19 +235,21 @@ export function CircuitPanel() {
 }
 
 function SectionLabel({ children, color }: { children: string; color: string }) {
+  const isActuator = children === 'Actuators'
   return (
     <div
       style={{
         fontFamily: 'var(--font-pixel)',
-        fontSize: 9,
+        fontSize: 10,
         fontWeight: 'bold',
-        color: '#fff',
+        color: isActuator ? '#1a1a1a' : '#fff',
         background: color,
-        border: '2px solid #2d2d2d',
-        padding: '4px 8px',
-        marginBottom: 8,
+        border: '3px solid #2d2d2d',
+        padding: '5px 12px',
+        marginBottom: 10,
         display: 'inline-block',
-        boxShadow: '2px 2px 0 #2d2d2d',
+        boxShadow: '3px 3px 0 #2d2d2d',
+        letterSpacing: 0.5,
       }}
     >
       {children}
