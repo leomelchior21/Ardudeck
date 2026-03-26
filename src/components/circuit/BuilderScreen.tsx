@@ -68,12 +68,12 @@ export function BuilderScreen() {
                 fontFamily: 'var(--font-pixel)',
                 fontSize: 9,
                 background: '#f0ead6',
-                border: '3px solid #2d2d2d',
-                padding: '5px 10px',
-                boxShadow: '3px 3px 0 #2d2d2d',
+                border: '4px solid #2d2d2d',
+                padding: '6px 12px',
+                boxShadow: '4px 4px 0 #2d2d2d',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 6,
+                gap: 7,
               }}
             >
               🔌 {student.ra}
@@ -89,7 +89,11 @@ export function BuilderScreen() {
           </button>
           {/* Save feedback */}
           {saveMsg && (
-            <span style={{ fontFamily: 'var(--font-pixel)', fontSize: 9, color: saveMsg.startsWith('✅') ? '#22c55e' : '#ef4444' }}>
+            <span style={{
+              fontFamily: 'var(--font-pixel)',
+              fontSize: 9,
+              color: saveMsg.startsWith('✅') ? '#22c55e' : '#ef4444',
+            }}>
               {saveMsg}
             </span>
           )}
@@ -108,9 +112,9 @@ export function BuilderScreen() {
       {/* LEFT — Circuit Builder */}
       <div
         style={{
-          width: 300,
-          minWidth: 260,
-          borderRight: '4px solid #2d2d2d',
+          width: 330,
+          minWidth: 280,
+          borderRight: '5px solid #2d2d2d',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',

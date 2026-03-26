@@ -9,7 +9,8 @@ export function CircuitPanel() {
   const components = useAppStore(s => s.components)
   const addComponent = useAppStore(s => s.addComponent)
   const [showDropdown, setShowDropdown] = useState(false)
-  const [activeTab, setActiveTab] = useState<'actuators' | 'sensors'>('actuators')
+  const [dropdownTab, setDropdownTab] = useState<'actuators' | 'sensors'>('actuators')
+  const [activeListTab, setActiveListTab] = useState<'actuators' | 'sensors'>('actuators')
 
   const pinConflicts = checkPinConflicts(components)
   const conflictedCompIds = new Set<string>()
@@ -24,6 +25,7 @@ export function CircuitPanel() {
 
   const actuators = components.filter(c => c.category === 'actuator')
   const sensors = components.filter(c => c.category === 'sensor')
+  const visibleComponents = activeListTab === 'actuators' ? actuators : sensors
 
   return (
     <div
@@ -32,13 +34,14 @@ export function CircuitPanel() {
         flexDirection: 'column',
         height: '100%',
         overflow: 'hidden',
+        background: '#f0ead6',
       }}
     >
-      {/* Top bar */}
+      {/* Top bar — globe + Add Component */}
       <div
         style={{
           padding: '12px 14px',
-          borderBottom: '3px solid #2d2d2d',
+          borderBottom: '4px solid #2d2d2d',
           background: '#e8e4d0',
           display: 'flex',
           alignItems: 'center',
@@ -46,14 +49,12 @@ export function CircuitPanel() {
           flexShrink: 0,
         }}
       >
-        {/* Globe icon */}
-        <span style={{ fontSize: 18 }}>🌐</span>
+        <span style={{ fontSize: 20 }}>🌐</span>
 
-        {/* Add button with dropdown */}
-        <div style={{ position: 'relative' }}>
+        <div style={{ position: 'relative', flex: 1 }}>
           <button
             className="pixel-btn pixel-btn-yellow"
-            style={{ fontSize: 9 }}
+            style={{ fontSize: 9, width: '100%', justifyContent: 'center' }}
             onClick={() => setShowDropdown(!showDropdown)}
           >
             ➕ Add Component ▼
@@ -61,7 +62,6 @@ export function CircuitPanel() {
 
           {showDropdown && (
             <>
-              {/* Backdrop */}
               <div
                 style={{ position: 'fixed', inset: 0, zIndex: 10 }}
                 onClick={() => setShowDropdown(false)}
@@ -71,36 +71,35 @@ export function CircuitPanel() {
                   position: 'absolute',
                   top: '100%',
                   left: 0,
+                  right: 0,
                   marginTop: 4,
                   background: '#f0ead6',
-                  border: '3px solid #2d2d2d',
-                  boxShadow: '4px 4px 0 #2d2d2d',
+                  border: '4px solid #2d2d2d',
+                  boxShadow: '5px 5px 0 #2d2d2d',
                   zIndex: 20,
-                  width: 220,
-                  maxHeight: 360,
+                  maxHeight: 380,
                   overflowY: 'auto',
                 }}
               >
-                {/* Tabs */}
-                <div style={{ display: 'flex', borderBottom: '3px solid #2d2d2d' }}>
-                  <TabBtn
-                    active={activeTab === 'actuators'}
-                    onClick={() => setActiveTab('actuators')}
+                {/* Dropdown tabs */}
+                <div style={{ display: 'flex', borderBottom: '4px solid #2d2d2d', flexShrink: 0 }}>
+                  <DropdownTabBtn
+                    active={dropdownTab === 'actuators'}
                     color="#f5a623"
+                    onClick={() => setDropdownTab('actuators')}
                   >
                     Actuators
-                  </TabBtn>
-                  <TabBtn
-                    active={activeTab === 'sensors'}
-                    onClick={() => setActiveTab('sensors')}
+                  </DropdownTabBtn>
+                  <DropdownTabBtn
+                    active={dropdownTab === 'sensors'}
                     color="#4a9eff"
+                    onClick={() => setDropdownTab('sensors')}
                   >
                     Sensors
-                  </TabBtn>
+                  </DropdownTabBtn>
                 </div>
 
-                {/* List */}
-                {(activeTab === 'actuators' ? ACTUATORS : SENSORS).map(def => (
+                {(dropdownTab === 'actuators' ? ACTUATORS : SENSORS).map(def => (
                   <button
                     key={def.type}
                     onClick={() => handleAdd(def.type)}
@@ -112,11 +111,12 @@ export function CircuitPanel() {
                       padding: '10px 14px',
                       background: 'none',
                       border: 'none',
-                      borderBottom: '1px solid #ddd8c0',
+                      borderBottom: '2px solid #ddd8c0',
                       cursor: 'pointer',
                       textAlign: 'left',
                       fontFamily: 'var(--font-pixel)',
                       fontSize: 8,
+                      color: '#2d2d2d',
                     }}
                     onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = '#fffef0')}
                     onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = 'none')}
@@ -131,15 +131,59 @@ export function CircuitPanel() {
         </div>
       </div>
 
+      {/* Prominent category tabs */}
+      <div style={{ display: 'flex', borderBottom: '4px solid #2d2d2d', flexShrink: 0 }}>
+        <button
+          onClick={() => setActiveListTab('actuators')}
+          style={{
+            flex: 1,
+            padding: '13px 8px',
+            background: activeListTab === 'actuators' ? '#f5a623' : '#ddd8c0',
+            border: 'none',
+            borderRight: '4px solid #2d2d2d',
+            fontFamily: 'var(--font-pixel)',
+            fontSize: 10,
+            fontWeight: 'bold',
+            color: activeListTab === 'actuators' ? '#1a1a1a' : '#777',
+            cursor: 'pointer',
+            letterSpacing: 0.5,
+            boxShadow: activeListTab === 'actuators' ? 'inset 0 -3px 0 rgba(0,0,0,0.2)' : 'none',
+          }}
+        >
+          Actuators
+        </button>
+        <button
+          onClick={() => setActiveListTab('sensors')}
+          style={{
+            flex: 1,
+            padding: '13px 8px',
+            background: activeListTab === 'sensors' ? '#4a9eff' : '#ddd8c0',
+            border: 'none',
+            fontFamily: 'var(--font-pixel)',
+            fontSize: 10,
+            fontWeight: 'bold',
+            color: activeListTab === 'sensors' ? '#fff' : '#777',
+            cursor: 'pointer',
+            letterSpacing: 0.5,
+            boxShadow: activeListTab === 'sensors' ? 'inset 0 -3px 0 rgba(0,0,0,0.2)' : 'none',
+          }}
+        >
+          Sensors
+        </button>
+      </div>
+
       {/* Component list */}
       <div
         style={{
           flex: 1,
           overflowY: 'auto',
           padding: 12,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 10,
         }}
       >
-        {components.length === 0 ? (
+        {visibleComponents.length === 0 ? (
           <div
             style={{
               fontFamily: 'var(--font-pixel)',
@@ -147,66 +191,34 @@ export function CircuitPanel() {
               color: '#888',
               textAlign: 'center',
               marginTop: 40,
-              lineHeight: 2.5,
+              lineHeight: 2.8,
             }}
           >
-            No components yet.
+            No {activeListTab} yet.
             <br />
             Click "Add Component"
             <br />
             to get started!
           </div>
         ) : (
-          <>
-            {actuators.length > 0 && (
-              <>
-                <SectionLabel color="#f5a623">Actuators</SectionLabel>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
-                  {actuators.map(comp => (
-                    <ComponentCard
-                      key={comp.id}
-                      component={comp}
-                      hasConflict={conflictedCompIds.has(comp.id)}
-                    />
-                  ))}
-                </div>
-              </>
-            )}
-
-            {sensors.length > 0 && (
-              <>
-                {/* Dotted separator matching the reference: ".. Sensors ........" */}
-                <div style={{
-                  fontFamily: 'var(--font-pixel)', fontSize: 8, color: '#666',
-                  margin: '12px 0 8px', display: 'flex', alignItems: 'center', gap: 6,
-                }}>
-                  <span style={{ whiteSpace: 'nowrap' }}>.. Sensors</span>
-                  <span style={{ flex: 1, borderBottom: '2px dotted #2d2d2d', display: 'inline-block', marginBottom: 2 }} />
-                </div>
-                <SectionLabel color="#4a9eff">Sensors</SectionLabel>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {sensors.map(comp => (
-                    <ComponentCard
-                      key={comp.id}
-                      component={comp}
-                      hasConflict={conflictedCompIds.has(comp.id)}
-                    />
-                  ))}
-                </div>
-              </>
-            )}
-          </>
+          visibleComponents.map(comp => (
+            <ComponentCard
+              key={comp.id}
+              component={comp}
+              hasConflict={conflictedCompIds.has(comp.id)}
+            />
+          ))
         )}
 
         {/* Pin conflict summary */}
         {pinConflicts.size > 0 && (
           <div
             style={{
-              marginTop: 16,
+              marginTop: 8,
               padding: '10px 12px',
               background: '#fef2f2',
-              border: '3px solid #ef4444',
-              boxShadow: '3px 3px 0 #ef4444',
+              border: '4px solid #ef4444',
+              boxShadow: '4px 4px 0 #ef4444',
             }}
           >
             <div
@@ -234,38 +246,15 @@ export function CircuitPanel() {
   )
 }
 
-function SectionLabel({ children, color }: { children: string; color: string }) {
-  const isActuator = children === 'Actuators'
-  return (
-    <div
-      style={{
-        fontFamily: 'var(--font-pixel)',
-        fontSize: 10,
-        fontWeight: 'bold',
-        color: isActuator ? '#1a1a1a' : '#fff',
-        background: color,
-        border: '3px solid #2d2d2d',
-        padding: '5px 12px',
-        marginBottom: 10,
-        display: 'inline-block',
-        boxShadow: '3px 3px 0 #2d2d2d',
-        letterSpacing: 0.5,
-      }}
-    >
-      {children}
-    </div>
-  )
-}
-
-function TabBtn({
+function DropdownTabBtn({
   active,
-  onClick,
   color,
+  onClick,
   children,
 }: {
   active: boolean
-  onClick: () => void
   color: string
+  onClick: () => void
   children: string
 }) {
   return (
@@ -275,12 +264,12 @@ function TabBtn({
         flex: 1,
         fontFamily: 'var(--font-pixel)',
         fontSize: 8,
-        padding: '8px 4px',
+        padding: '10px 4px',
         background: active ? color : '#e8e4d0',
         border: 'none',
-        borderRight: '2px solid #2d2d2d',
+        borderRight: '3px solid #2d2d2d',
         cursor: 'pointer',
-        color: active ? '#fff' : '#555',
+        color: active ? (color === '#f5a623' ? '#1a1a1a' : '#fff') : '#666',
         fontWeight: active ? 'bold' : 'normal',
       }}
     >

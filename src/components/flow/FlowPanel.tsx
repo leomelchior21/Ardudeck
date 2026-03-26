@@ -45,7 +45,7 @@ export function FlowPanel() {
     (connection: Connection) => {
       setFlowEdges(
         addEdge(
-          { ...connection, animated: true, style: { stroke: '#2d2d2d', strokeWidth: 3 } },
+          { ...connection, animated: true, style: { stroke: '#2d2d2d', strokeWidth: 4 } },
           flowEdges
         )
       )
@@ -80,33 +80,45 @@ export function FlowPanel() {
           onConnect={onConnect}
           nodeTypes={nodeTypes}
           fitView
-          fitViewOptions={{ padding: 0.2 }}
+          fitViewOptions={{ padding: 0.25 }}
           defaultEdgeOptions={{
             animated: true,
-            style: { stroke: '#2d2d2d', strokeWidth: 3 },
+            style: { stroke: '#2d2d2d', strokeWidth: 4 },
           }}
           deleteKeyCode="Delete"
         >
           <Background
             variant={BackgroundVariant.Dots}
-            gap={20}
-            size={1.5}
+            gap={22}
+            size={2}
             color="#2d2d2d"
-            style={{ opacity: 0.15 }}
+            style={{ opacity: 0.18 }}
           />
           <Controls
             style={{
-              border: '3px solid #2d2d2d',
-              boxShadow: '3px 3px 0 #2d2d2d',
+              border: '4px solid #2d2d2d',
+              boxShadow: '5px 5px 0 #2d2d2d',
               borderRadius: 0,
             }}
           />
           <MiniMap
             style={{
-              border: '3px solid #2d2d2d',
+              border: '4px solid #2d2d2d',
+              boxShadow: '5px 5px 0 #2d2d2d',
               borderRadius: 0,
             }}
             maskColor="rgba(232,228,208,0.7)"
+            nodeColor={(node) => {
+              const colorMap: Record<string, string> = {
+                sensorNode: '#4a9eff',
+                conditionNode: '#22c55e',
+                actionNode: '#f5a623',
+                timerNode: '#06b6d4',
+                delayNode: '#a855f7',
+                logicNode: '#f97316',
+              }
+              return colorMap[node.type ?? ''] ?? '#9ca3af'
+            }}
           />
         </ReactFlow>
       </div>
@@ -114,18 +126,19 @@ export function FlowPanel() {
       {/* Summary footer */}
       <div
         style={{
-          borderTop: '3px solid #2d2d2d',
-          padding: '10px 16px',
-          background: '#f0ead6',
+          borderTop: '4px solid #2d2d2d',
+          padding: '11px 18px',
+          background: '#ebe6d2',
           flexShrink: 0,
+          boxShadow: 'inset 0 3px 0 rgba(0,0,0,0.06)',
         }}
       >
         <p
           style={{
             fontFamily: 'var(--font-pixel)',
             fontSize: 8,
-            lineHeight: 2,
-            color: '#333',
+            lineHeight: 2.2,
+            color: '#2a2a2a',
           }}
         >
           {summary}
