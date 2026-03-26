@@ -58,77 +58,84 @@ export function FlowToolbar() {
     <div
       style={{
         borderBottom: '4px solid #2d2d2d',
-        padding: '10px 14px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 7,
-        flexWrap: 'wrap',
         background: '#e8e4d0',
         flexShrink: 0,
       }}
     >
-      {/* Panel title */}
-      <span
-        style={{
-          fontFamily: 'var(--font-pixel)',
-          fontSize: 11,
-          fontWeight: 'bold',
-          color: '#1a1a1a',
-          marginRight: 6,
-          letterSpacing: 0.5,
-        }}
-      >
-        Logic Flowchart
-      </span>
-
-      <div style={{ width: 3, height: 22, background: '#2d2d2d', flexShrink: 0 }} />
-
-      {/* Block type buttons with radio dot */}
-      {BLOCK_TYPES.map(bt => (
-        <button
-          key={`${bt.type}_${bt.label}`}
-          className="pixel-btn"
+      {/* Top row: title + block buttons + right actions */}
+      <div style={{
+        padding: '10px 14px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 7,
+        overflowX: 'auto',
+      }}>
+        {/* Panel title */}
+        <span
           style={{
-            background: bt.color,
-            color: bt.textColor,
-            fontSize: 9,
-            padding: '8px 12px',
-            border: '4px solid #2d2d2d',
-            boxShadow: '4px 4px 0 #2d2d2d',
-            gap: 7,
-          }}
-          onClick={() => addNode(bt.type, bt.label, bt.data)}
-        >
-          {/* Radio dot indicator */}
-          <span style={{
-            display: 'inline-block',
-            width: 10,
-            height: 10,
-            borderRadius: '50%',
-            background: 'rgba(255,255,255,0.9)',
-            border: '2px solid rgba(0,0,0,0.5)',
+            fontFamily: 'var(--font-pixel)',
+            fontSize: 10,
+            fontWeight: 'bold',
+            color: '#1a1a1a',
+            marginRight: 4,
+            letterSpacing: 0.5,
+            whiteSpace: 'nowrap',
             flexShrink: 0,
-          }} />
-          {bt.label}
-        </button>
-      ))}
+          }}
+        >
+          Logic Flowchart
+        </span>
 
-      {/* Right group */}
-      <div style={{ marginLeft: 'auto', display: 'flex', gap: 7, flexShrink: 0 }}>
-        <button
-          className="pixel-btn pixel-btn-gray"
-          style={{ fontSize: 8, padding: '8px 12px' }}
-          onClick={handleReset}
-        >
-          Reset Project
-        </button>
-        <button
-          className="pixel-btn pixel-btn-blue"
-          style={{ fontSize: 8, padding: '8px 12px' }}
-          onClick={handleAutoArrange}
-        >
-          Auto Arrange
-        </button>
+        <div style={{ width: 3, height: 20, background: '#2d2d2d', flexShrink: 0 }} />
+
+        {/* Block type buttons with radio dot */}
+        {BLOCK_TYPES.map(bt => (
+          <button
+            key={`${bt.type}_${bt.label}`}
+            className="pixel-btn"
+            style={{
+              background: bt.color,
+              color: bt.textColor,
+              fontSize: 8,
+              padding: '7px 10px',
+              border: '4px solid #2d2d2d',
+              boxShadow: '4px 4px 0 #2d2d2d',
+              gap: 6,
+              flexShrink: 0,
+              whiteSpace: 'nowrap',
+            }}
+            onClick={() => addNode(bt.type, bt.label, bt.data)}
+          >
+            <span style={{
+              display: 'inline-block',
+              width: 9,
+              height: 9,
+              borderRadius: '50%',
+              background: 'rgba(255,255,255,0.9)',
+              border: '2px solid rgba(0,0,0,0.5)',
+              flexShrink: 0,
+            }} />
+            {bt.label}
+          </button>
+        ))}
+
+        {/* Right group */}
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 7, flexShrink: 0 }}>
+          <button
+            className="pixel-btn pixel-btn-gray"
+            style={{ fontSize: 8, padding: '7px 10px', whiteSpace: 'nowrap' }}
+            onClick={handleReset}
+          >
+            Reset Project
+          </button>
+          <button
+            className="pixel-btn pixel-btn-blue"
+            style={{ fontSize: 8, padding: '7px 10px', whiteSpace: 'nowrap' }}
+            onClick={handleAutoArrange}
+          >
+            Auto Arrange
+          </button>
+        </div>
       </div>
     </div>
   )
