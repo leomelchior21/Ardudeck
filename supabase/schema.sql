@@ -59,6 +59,7 @@ create policy "Students can update own projects"
   on public.projects for update
   using (true);
 
+
 create policy "Students can delete own projects"
   on public.projects for delete
   using (true);
