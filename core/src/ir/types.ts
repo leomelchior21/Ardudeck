@@ -27,7 +27,12 @@ export interface IrRead {
 }
 
 export interface IrCondition {
-  op: 'lt' | 'gt' | 'eq' | 'lte' | 'gte' | 'neq';
+  /**
+   * `always` runs the rule's actions on every loop with no sensor; it is how a
+   * flow that only contains actuator cards (a standalone blink, for example)
+   * is represented.
+   */
+  op: 'lt' | 'gt' | 'eq' | 'lte' | 'gte' | 'neq' | 'always';
   value: number;
 }
 

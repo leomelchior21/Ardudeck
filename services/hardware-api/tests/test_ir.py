@@ -47,6 +47,26 @@ def test_button_pullup_is_kept() -> None:
     assert watches_for(program)[0].pullup is True
 
 
+def test_parses_an_actuator_only_program() -> None:
+    data: dict[str, Any] = {
+        "version": 1,
+        "title": "Blink",
+        "reads": [],
+        "rules": [
+            {
+                "id": "a",
+                "var": "",
+                "condition": {"op": "always", "value": 0},
+                "then": [{"nodeId": "a", "op": "digitalWrite", "pin": "D13", "value": 1}],
+            }
+        ],
+    }
+    program = parse_program(data)
+    assert program.reads == []
+    assert program.rules[0].condition.op == "always"
+    assert watches_for(program) == []
+
+
 def test_distance_reads_are_not_watched() -> None:
     data: dict[str, Any] = {
         "version": 1,

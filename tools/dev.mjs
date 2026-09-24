@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { apiDir, ensureEnvironment, isWindows, repoRoot, venvPython } from './python.mjs';
@@ -54,12 +55,17 @@ process.on('SIGTERM', () => shutdown(0));
 
 if (runApi) {
   ensureEnvironment();
+  const apiEnv = { ...process.env };
+  const bundledCli = path.join(repoRoot, 'vendor', 'tools', isWindows ? 'arduino-cli.exe' : 'arduino-cli');
+  if (!apiEnv.ARDUDECK_ARDUINO_CLI && existsSync(bundledCli)) {
+    apiEnv.ARDUDECK_ARDUINO_CLI = bundledCli;
+  }
   process.stdout.write('[dev] API  http://127.0.0.1:8080/api/health\n');
   launch(
     'api',
     venvPython(),
     ['-m', 'uvicorn', 'app.main:app', '--host', '127.0.0.1', '--port', '8080', '--reload'],
-    { cwd: apiDir },
+    { cwd: apiDir, env: apiEnv },
   );
 }
 

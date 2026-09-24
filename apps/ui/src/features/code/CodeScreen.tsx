@@ -29,7 +29,13 @@ export function CodeScreen() {
     const list: BlockChip[] = [];
     for (const read of program.reads) list.push({ id: read.id, label: read.name });
     for (const rule of program.rules) {
-      list.push({ id: rule.id, label: `Rule ${rule.condition.op === 'lt' ? '<' : rule.condition.op === 'gt' ? '>' : '='} ${rule.condition.value}` });
+      if (rule.condition.op === 'always') {
+        list.push({ id: rule.id, label: 'Rule Always' });
+      } else {
+        const symbol =
+          rule.condition.op === 'lt' ? '<' : rule.condition.op === 'gt' ? '>' : '=';
+        list.push({ id: rule.id, label: `Rule ${symbol} ${rule.condition.value}` });
+      }
     }
     for (const rule of program.rules) {
       for (const action of rule.then) {

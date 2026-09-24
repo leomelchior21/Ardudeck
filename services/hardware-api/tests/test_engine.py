@@ -227,6 +227,34 @@ def test_missing_readings_never_trigger_rules(bus: EventBus, golden_program: dic
     assert engine.status()["values"][LIGHT_LED]["ok"] is False
 
 
+def test_evaluate_always_ignores_the_reading() -> None:
+    condition = IrCondition(op="always", value=0)
+    assert evaluate(None, condition, None) is True
+    assert evaluate(123, condition, None) is True
+
+
+def test_engine_drives_an_always_rule_without_sensors(bus: EventBus) -> None:
+    data: dict[str, Any] = {
+        "version": 1,
+        "title": "Blink",
+        "reads": [],
+        "rules": [
+            {
+                "id": "a",
+                "var": "",
+                "condition": {"op": "always", "value": 0},
+                "then": [{"nodeId": "a", "op": "digitalWrite", "pin": "D13", "value": 1}],
+            }
+        ],
+    }
+    backend = MockBackend(bus, seed=1)
+    engine = RuntimeEngine(backend, bus, parse_program(data))
+    engine._step()  # noqa: SLF001 - direct step keeps the test deterministic
+    status = engine.status()
+    assert status["rules"]["a"] is True
+    assert status["outputs"]["a"]["state"] == "ON"
+
+
 def test_evaluate_handles_distance_sentinels() -> None:
     read = IrRead(id="s", var="distance", kind="distance", trigPin="D7", echoPin="D8")
     condition = IrCondition(op="lt", value=30)

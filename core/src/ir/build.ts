@@ -496,6 +496,32 @@ export function buildIr(flow: Flow): BuildIrResult {
     });
   }
 
+  // Actuator cards with no incoming connection run on their own: the card's
+  // control blocks (or its single command) become an unconditional rule, so a
+  // simple LED can blink without any sensor.
+  for (const node of ordered) {
+    const def = getComponent(node.componentId);
+    if (!def || def.category !== 'actuator') continue;
+    if (incomingEdge(flow, node.id)) continue;
+    if (!def.deployable) {
+      return { ok: false, error: `${def.name} cannot be deployed yet.` };
+    }
+    const actionVar = actionVars.get(node.id);
+    if (!actionVar) return { ok: false, error: `Choose a pin for ${def.name}.` };
+
+    const actions = actionsFor(node, def, actionVar, true);
+    if (typeof actions === 'string') return { ok: false, error: actions };
+    if (actions.length === 0) continue;
+
+    rules.push({
+      id: node.id,
+      var: '',
+      condition: { op: 'always', value: 0 },
+      then: actions,
+      else: [],
+    });
+  }
+
   if (rules.length === 0) {
     return { ok: false, error: 'Add a condition and an action to your flow.' };
   }

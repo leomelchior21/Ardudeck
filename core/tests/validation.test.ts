@@ -15,11 +15,11 @@ describe('validateFlow', () => {
     expect(result.errors).toHaveLength(0);
   });
 
-  it('asks for a sensor when the canvas is empty', () => {
+  it('asks for a component when the canvas is empty', () => {
     const flow = buildFlow([], []);
     const result = validateFlow(flow);
     expect(result.ok).toBe(false);
-    expect(result.summary).toBe('Add a sensor to start.');
+    expect(result.summary).toBe('Add a component to start.');
   });
 
   it('asks for a pin', () => {
@@ -148,9 +148,11 @@ describe('validateFlow', () => {
     expect(validateFlow(flow).ok).toBe(true);
   });
 
-  it('asks for an action on an actuator with no input', () => {
+  it('accepts a standalone actuator with no input', () => {
     const flow = buildFlow([{ id: 'a', componentId: 'led', pins: { signal: 'D9' } }], []);
-    expect(codes(flow)).toContain('actuator-input');
+    const result = validateFlow(flow);
+    expect(result.ok).toBe(true);
+    expect(result.errors).toHaveLength(0);
   });
 
   it('rejects a sensor connected straight to an action', () => {

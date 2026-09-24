@@ -66,6 +66,7 @@ function actionSignature(action: IrAction): string {
 }
 
 function evaluate(value: number | null, condition: IrCondition, read: IrRead | null): boolean {
+  if (condition.op === 'always') return true;
   if (value === null) return false;
   if (read !== null && read.kind === 'distance' && value < 0) return false;
   switch (condition.op) {

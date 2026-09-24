@@ -296,9 +296,10 @@ export function LivePanel({
     if (!program) return [];
     return program.rules.map((rule) => {
       const read = program.reads.find((candidate) => candidate.var === rule.var);
-      const expression = `${read?.name ?? rule.var} ${
-        OPERATOR[rule.condition.op] ?? '?'
-      } ${rule.condition.value}`;
+      const expression =
+        rule.condition.op === 'always'
+          ? 'Always'
+          : `${read?.name ?? rule.var} ${OPERATOR[rule.condition.op] ?? '?'} ${rule.condition.value}`;
       return { id: rule.id, expression };
     });
   }, [program]);

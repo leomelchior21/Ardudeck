@@ -119,6 +119,10 @@ export function DeployScreen() {
       items.push(`${read.name}${read.pin ? ` ${read.pin}` : ''}`);
     }
     for (const rule of compiled.program.rules) {
+      if (rule.condition.op === 'always') {
+        items.push('Always');
+        continue;
+      }
       const symbol = rule.condition.op === 'lt' ? '<' : rule.condition.op === 'gt' ? '>' : '=';
       items.push(`${symbol} ${rule.condition.value}`);
     }

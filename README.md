@@ -129,6 +129,16 @@ start."* The Electron desktop shell is unaffected - it always uses its own backe
 
 ---
 
+## ACTUATOR-ONLY FLOWS
+
+A card can also run on its own. Drop an LED on the canvas and stack controls on it
+(HIGH -> DELAY 500 -> LOW -> DELAY 500): the flow compiles to an unconditional loop
+with no sensor, tests live in simulation, and deploys like any other project. The
+same works for a buzzer, a servo or an RGB LED. This is the fastest path from an
+empty canvas to a blinking LED.
+
+---
+
 ## RASPBERRY PI (SECONDARY / EXPERIMENTAL HARDWARE CONSOLE TARGET)
 
 **Primary target: Windows 10/11 school notebooks.** The Raspberry Pi path is kept as a

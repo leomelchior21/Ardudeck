@@ -143,14 +143,21 @@ class ArduinoCli:
             payload = json.loads(result.output)
         except json.JSONDecodeError:
             return []
-        names: list[str] = []
+        entries: list[Any]
         if isinstance(payload, list):
-            for entry in payload:
-                if isinstance(entry, dict):
-                    metadata = entry.get("metadata") or {}
-                    identifier = entry.get("id") or metadata.get("id")
-                    if isinstance(identifier, str):
-                        names.append(identifier)
+            entries = payload
+        elif isinstance(payload, dict) and isinstance(payload.get("platforms"), list):
+            entries = payload["platforms"]
+        else:
+            return []
+        names: list[str] = []
+        for entry in entries:
+            if not isinstance(entry, dict):
+                continue
+            metadata = entry.get("metadata") or {}
+            identifier = entry.get("id") or metadata.get("id")
+            if isinstance(identifier, str):
+                names.append(identifier)
         return names
 
     def has_avr_core(self) -> bool:
@@ -163,16 +170,21 @@ class ArduinoCli:
         result = self._run(["board", "list", "--format", "json"], timeout=60.0)
         if not result.ok:
             return []
-        start = result.output.find("[")
-        if start < 0:
-            return []
+        payload: Any = None
         try:
-            payload = json.loads(result.output[start:])
+            payload = json.loads(result.output)
         except json.JSONDecodeError:
-            return []
-        if not isinstance(payload, list):
-            return []
-        return [entry for entry in payload if isinstance(entry, dict)]
+            start = result.output.find("[")
+            if start >= 0:
+                try:
+                    payload = json.loads(result.output[start:])
+                except json.JSONDecodeError:
+                    return []
+        if isinstance(payload, dict) and isinstance(payload.get("detected_ports"), list):
+            return [entry for entry in payload["detected_ports"] if isinstance(entry, dict)]
+        if isinstance(payload, list):
+            return [entry for entry in payload if isinstance(entry, dict)]
+        return []
 
     # ---------------------------------------------------------------- actions
 

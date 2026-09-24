@@ -1,6 +1,6 @@
 import { isAnalogPin, pinNumber } from '../components/pins';
 import type { PinId } from '../components/pins';
-import type { IrAction, IrCondition, IrProgram, IrRead, IrRule } from '../ir/types';
+import type { IrAction, IrCondition, IrProgram, IrRead } from '../ir/types';
 import { toIdentifier, uniqueName } from './cpp-names';
 
 export interface CodeRange {
@@ -92,7 +92,9 @@ function pinName(meta: ActionMeta, pin: PinId | undefined): string {
   return (pin && meta.pinNames[pin]) ?? 'PIN';
 }
 
-const OPERATOR: Record<IrCondition['op'], string> = {
+type ComparisonOp = Exclude<IrCondition['op'], 'always'>;
+
+const OPERATOR: Record<ComparisonOp, string> = {
   lt: '<',
   gt: '>',
   eq: '==',
@@ -100,7 +102,7 @@ const OPERATOR: Record<IrCondition['op'], string> = {
   gte: '>=',
   neq: '!=',
 };
-const OP_WORD: Record<IrCondition['op'], string> = {
+const OP_WORD: Record<ComparisonOp, string> = {
   lt: 'less than',
   gt: 'greater than',
   eq: 'equal to',
@@ -170,8 +172,8 @@ function describeAction(action: IrAction): string {
   return `${action.name} -> ${action.pin ?? 'timing'}`;
 }
 
-function conditionExpression(read: IrRead, rule: IrRule, valueName: string): string {
-  const comparison = `${valueName} ${OPERATOR[rule.condition.op]} ${Math.round(rule.condition.value)}`;
+function conditionExpression(read: IrRead, op: ComparisonOp, value: number, valueName: string): string {
+  const comparison = `${valueName} ${OPERATOR[op]} ${Math.round(value)}`;
   if (read.kind === 'distance') return `${valueName} >= 0 && ${comparison}`;
   return comparison;
 }
@@ -356,6 +358,17 @@ export function generateArduino(program: IrProgram): GeneratedSketch {
   }
 
   for (const rule of program.rules) {
+    if (rule.condition.op === 'always') {
+      if (rule.then.length === 0) continue;
+      writer.add();
+      writer.add('  // Always', [rule.id]);
+      for (const action of rule.then) {
+        const actionInfo = actionMeta.get(action.nodeId);
+        if (actionInfo) writer.add(`  ${actionLine(action, actionInfo)}`, [action.nodeId]);
+      }
+      continue;
+    }
+
     const read = readByVar.get(rule.var);
     const meta = read ? readMeta.get(read.id) : undefined;
     if (!read || !meta) continue;
@@ -366,7 +379,12 @@ export function generateArduino(program: IrProgram): GeneratedSketch {
       `  // ${read.name} is ${OP_WORD[rule.condition.op]} ${Math.round(rule.condition.value)}${unit}`,
       [rule.id],
     );
-    const expression = conditionExpression(read, rule, meta.valueName);
+    const expression = conditionExpression(
+      read,
+      rule.condition.op,
+      rule.condition.value,
+      meta.valueName,
+    );
 
     if (rule.then.length === 0 && rule.else.length === 0) continue;
 

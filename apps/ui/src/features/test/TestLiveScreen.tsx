@@ -238,7 +238,53 @@ export function TestLiveScreen() {
 
           {program.rules.map((rule) => {
             const read = readsByVar.get(rule.var);
-            if (!read) return null;
+            if (!read) {
+              return (
+                <div key={rule.id} className="test-rule">
+                  <div className="test-card">
+                    <div className="test-card-main">
+                      <span className="test-label">Always</span>
+                      <span className="test-detail">runs on every loop</span>
+                    </div>
+                  </div>
+
+                  <div className="test-arrow">
+                    <Icon name="chevron-down" size={22} />
+                  </div>
+
+                  <div className="test-card test-card--on">
+                    <div className="test-card-main">
+                      <span className="test-label">Rule</span>
+                      <span className="test-value">Always</span>
+                    </div>
+                    <span className="node-badge node-badge--true">TRUE</span>
+                  </div>
+
+                  <div className="test-arrow">
+                    <Icon name="chevron-down" size={22} />
+                  </div>
+
+                  <div className="test-card test-card--on">
+                    <div className="test-card-main">
+                      <span className="test-label">Action</span>
+                      <span className="test-value">
+                        {rule.then.map((action, index) => (
+                          <span
+                            key={`${action.nodeId}:${action.op}:${index}`}
+                            style={{ marginRight: 12 }}
+                          >
+                            {action.name}{' '}
+                            <span className="test-detail">
+                              {outputs[action.nodeId]?.state ?? actionText(action)}
+                            </span>
+                          </span>
+                        ))}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
             const def = getComponent(
               flow.nodes.find((node) => node.id === read.id)?.componentId ?? 'ldr',
             );

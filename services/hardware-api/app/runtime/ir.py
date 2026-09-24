@@ -33,7 +33,7 @@ class IrRead(BaseModel):
 class IrCondition(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
-    op: Literal["lt", "gt", "eq", "lte", "gte", "neq"]
+    op: Literal["lt", "gt", "eq", "lte", "gte", "neq", "always"]
     value: float = 0
 
 
@@ -114,7 +114,7 @@ def parse_program(data: dict[str, Any] | None) -> IrProgram:
         raise IrError("Add a condition and an action to your flow.")
 
     for rule in program.rules:
-        if rule.var not in var_names:
+        if rule.condition.op != "always" and rule.var not in var_names:
             raise IrError("This condition needs a sensor input.")
 
     return program

@@ -27,6 +27,8 @@ DISTANCE_EVERY_TICKS = 8
 
 
 def evaluate(value: int | float | None, condition: IrCondition, read: IrRead | None) -> bool:
+    if condition.op == "always":
+        return True
     if value is None:
         return False
     if read is not None and read.kind == "distance" and value < 0:

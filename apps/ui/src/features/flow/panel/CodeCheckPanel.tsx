@@ -46,19 +46,27 @@ export function CodeCheckPanel({
       list.push({ id: read.id, kind: 'sensor', label: `${read.name}${read.pin ? ` · ${read.pin}` : ''}` });
     }
     for (const rule of program.rules) {
-      const symbol =
-        rule.condition.op === 'lt'
-          ? '<'
-          : rule.condition.op === 'gt'
-            ? '>'
-            : rule.condition.op === 'lte'
-              ? '≤'
-              : rule.condition.op === 'gte'
-                ? '≥'
-                : rule.condition.op === 'neq'
-                  ? '≠'
-                  : '=';
-      list.push({ id: rule.id, kind: 'condition', label: `Condition ${symbol} ${rule.condition.value}` });
+      if (rule.condition.op === 'always') {
+        list.push({ id: rule.id, kind: 'condition', label: 'Always' });
+      } else {
+        const symbol =
+          rule.condition.op === 'lt'
+            ? '<'
+            : rule.condition.op === 'gt'
+              ? '>'
+              : rule.condition.op === 'lte'
+                ? '≤'
+                : rule.condition.op === 'gte'
+                  ? '≥'
+                  : rule.condition.op === 'neq'
+                    ? '≠'
+                    : '=';
+        list.push({
+          id: rule.id,
+          kind: 'condition',
+          label: `Condition ${symbol} ${rule.condition.value}`,
+        });
+      }
       for (const action of [...rule.then, ...rule.else]) {
         if (list.some((item) => item.id === action.nodeId)) continue;
         list.push({ id: action.nodeId, kind: 'actuator', label: `${action.name} · ${action.pin}` });

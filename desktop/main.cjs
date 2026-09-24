@@ -112,7 +112,12 @@ function stopBackend() {
 }
 
 function backendEnvironment() {
-  if (!app.isPackaged) return { ...process.env, ARDU_OS_DESKTOP: '1', PYTHONUNBUFFERED: '1' };
+  if (!app.isPackaged) {
+    const env = { ...process.env, ARDU_OS_DESKTOP: '1', PYTHONUNBUFFERED: '1' };
+    const devCli = path.join(__dirname, '..', 'vendor', 'tools', 'arduino-cli.exe');
+    if (!env.ARDUDECK_ARDUINO_CLI && fs.existsSync(devCli)) env.ARDUDECK_ARDUINO_CLI = devCli;
+    return env;
+  }
   const resources = process.resourcesPath;
   const dataRoot = path.join(app.getPath('userData'), 'data');
   const env = {

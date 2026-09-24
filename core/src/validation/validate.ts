@@ -203,14 +203,6 @@ function checkStructure(infos: NodeInfo[], flow: Flow, issues: ValidationIssue[]
     }
 
     if (def.category === 'actuator') {
-      if (ins.length === 0) {
-        issues.push({
-          code: 'actuator-input',
-          severity: 'error',
-          message: `Connect something to ${def.name}.`,
-          nodeId: node.id,
-        });
-      }
       if (def.requiresBlocks && (node.config.blocks ?? []).length === 0) {
         issues.push({
           code: 'missing-blocks',
@@ -248,7 +240,7 @@ export function validateFlow(flow: Flow): ValidationResult {
   const issues: ValidationIssue[] = [];
 
   if (flow.nodes.length === 0) {
-    issues.push({ code: 'empty-flow', severity: 'error', message: 'Add a sensor to start.' });
+    issues.push({ code: 'empty-flow', severity: 'error', message: 'Add a component to start.' });
   }
 
   const infos = collectNodes(flow, issues);

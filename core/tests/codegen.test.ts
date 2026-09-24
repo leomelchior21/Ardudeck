@@ -47,7 +47,35 @@ describe('pipeline: flow -> IR -> Arduino C++', () => {
     const result = compileFlow(buildFlow([], []));
     expect(result.ok).toBe(false);
     expect(result.sketch).toBeUndefined();
-    expect(result.validation.summary).toBe('Add a sensor to start.');
+    expect(result.validation.summary).toBe('Add a component to start.');
+  });
+
+  it('compiles an actuator-only flow (standalone LED blink)', () => {
+    const flow = buildFlow(
+      [
+        {
+          id: 'act_led',
+          componentId: 'led',
+          pins: { signal: 'D9' },
+          blocks: [
+            { id: 'b1', kind: 'high' },
+            { id: 'b2', kind: 'delay', values: { ms: 500 } },
+            { id: 'b3', kind: 'low' },
+            { id: 'b4', kind: 'delay', values: { ms: 500 } },
+          ],
+        },
+      ],
+      [],
+    );
+    const result = compileFlow(flow);
+    expect(result.ok).toBe(true);
+    expect(result.program?.reads).toHaveLength(0);
+    expect(result.program?.rules[0]?.condition.op).toBe('always');
+    const code = result.sketch?.code ?? '';
+    expect(code).toContain('// Always');
+    expect(code).toContain('digitalWrite(ledPin, HIGH);');
+    expect(code).toContain('digitalWrite(ledPin, LOW);');
+    expect(code).toContain('delay(500);');
   });
 
   it('generates a guarded distance reading', () => {
