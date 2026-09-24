@@ -1,0 +1,43 @@
+[Unit]
+Description=ArduDeck hardware API and touch UI
+Documentation=file:@INSTALL_DIR@/README.md
+After=network.target
+
+[Service]
+Type=simple
+User=@APP_USER@
+Group=@APP_USER@
+SupplementaryGroups=dialout
+
+WorkingDirectory=@INSTALL_DIR@/services/hardware-api
+Environment=HOME=@DATA_DIR@/home
+Environment=ARDUDECK_MOCK=off
+Environment=ARDUDECK_DATA_DIR=@DATA_DIR@
+Environment=ARDUDECK_LOG_DIR=@LOG_DIR@
+Environment=ARDUDECK_UI_DIST=@INSTALL_DIR@/apps/ui/dist
+Environment=ARDUDECK_BRIDGE_SKETCH=@INSTALL_DIR@/firmware/ardudeck-bridge
+Environment=ARDUDECK_ARDUINO_CLI=/usr/local/bin/arduino-cli
+Environment=ARDUDECK_FQBN=arduino:avr:uno
+Environment=ARDUDECK_HOST=127.0.0.1
+Environment=ARDUDECK_PORT=8080
+
+ExecStart=@INSTALL_DIR@/services/hardware-api/.venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port 8080
+
+Restart=always
+RestartSec=2
+TimeoutStopSec=10
+KillMode=mixed
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ardudeck-api
+
+# The service only needs its own data, the install directory and USB serial.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=read-only
+ReadWritePaths=@DATA_DIR@ @LOG_DIR@
+
+[Install]
+WantedBy=multi-user.target

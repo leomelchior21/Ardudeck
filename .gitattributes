@@ -1,0 +1,20 @@
+# The Raspberry Pi runs these scripts directly: they must keep LF line endings
+# even when the repository is cloned on Windows.
+* text=auto eol=lf
+
+*.sh text eol=lf
+*.ino text eol=lf
+*.py text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.mjs text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.service text eol=lf
+
+*.png binary
+*.jpg binary
+*.ico binary

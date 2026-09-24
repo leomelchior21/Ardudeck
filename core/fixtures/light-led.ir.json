@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "title": "Test project",
+  "loopDelayMs": 50,
+  "reads": [
+    {
+      "id": "sensor_light",
+      "name": "Light Sensor",
+      "var": "light",
+      "kind": "analog",
+      "pin": "A0"
+    }
+  ],
+  "rules": [
+    {
+      "id": "cond_less",
+      "var": "light",
+      "condition": {
+        "op": "lt",
+        "value": 300
+      },
+      "then": [
+        {
+          "nodeId": "act_led",
+          "name": "LED",
+          "var": "led",
+          "pin": "D9",
+          "op": "digitalWrite",
+          "value": 1
+        }
+      ],
+      "else": [
+        {
+          "nodeId": "act_led",
+          "name": "LED",
+          "var": "led",
+          "pin": "D9",
+          "op": "digitalWrite",
+          "value": 0
+        }
+      ]
+    }
+  ]
+}

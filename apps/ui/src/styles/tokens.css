@@ -1,0 +1,132 @@
+/*
+  Ardu OS design tokens.
+
+  Two visual environments, one system:
+  - Ardu OS shell: warm black, electric violet, acid lime. An operating
+    environment, not a dashboard.
+  - ArduDeck: off-white paper, ink borders, vivid colour blocks. A creative
+    studio for physical computing.
+
+  The bold identity comes from composition, type, borders and colour - not
+  from effects. This keeps modest school notebooks fast.
+*/
+
+:root {
+  /* ---------------------------------------------------------- Ardu OS --- */
+  --os-bg: #6b4df6;
+  --os-bg-deep: #5537e0;
+  --os-shell: #131118;
+  --os-panel: #1d1a24;
+  --os-panel-2: #262230;
+  --os-line: #35303f;
+  --os-text: #f5f2ea;
+  --os-muted: #a49fb4;
+
+  /* --------------------------------------------------------- palette --- */
+  --violet: #6b4df6;
+  --violet-deep: #4a2fd0;
+  --violet-soft: #ece6ff;
+  --lime: #c9f24b;
+  --lime-deep: #a8d81f;
+  --lime-soft: #f0fad2;
+  --sky: #8fd0f5;
+  --sky-soft: #e2f4fe;
+  --coral: #f2544b;
+  --coral-soft: #fde5e3;
+  --yellow: #f6d84b;
+  --yellow-soft: #fcf4d4;
+  --lavender: #c3b2f7;
+
+  /* ----------------------------------------------------- ArduDeck UI --- */
+  --bg: #f4f1e9;
+  --surface: #ffffff;
+  --surface-2: #efece1;
+  --surface-3: #e4e0d3;
+  --line: #d9d3c3;
+  --line-strong: #16151c;
+
+  --text: #16151c;
+  --text-soft: #474450;
+  --text-faint: #7c7987;
+
+  --accent: #6b4df6;
+  --accent-strong: #4a2fd0;
+  --accent-soft: #ece6ff;
+
+  --sensor: #1287b0;
+  --sensor-soft: #e0f2fb;
+  --condition: #52700a;
+  --condition-soft: #eef8cf;
+  --actuator: #d43f36;
+  --actuator-soft: #fde5e3;
+
+  --ok: #2f8f4e;
+  --ok-soft: #dcf3e3;
+  --warn: #a86a12;
+  --warn-soft: #fbefd8;
+  --danger: #c0392b;
+  --danger-soft: #fde5e3;
+
+  /* -------------------------------------------------------- geometry --- */
+  --radius-sm: 10px;
+  --radius: 16px;
+  --radius-lg: 24px;
+  --radius-xl: 34px;
+
+  --shadow-sm: 0 1px 0 rgba(22, 21, 28, 0.06);
+  --shadow: 0 8px 22px rgba(22, 21, 28, 0.12);
+  --shadow-lg: 0 28px 70px rgba(0, 0, 0, 0.38);
+
+  --topbar: 66px;
+
+  /* ----------------------------------------------------------- type ---- */
+  --font:
+    'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  --font-display:
+    'Segoe UI Black', 'Arial Black', 'Segoe UI', system-ui, sans-serif;
+  --mono: ui-monospace, 'Cascadia Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
+
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #16151c;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.4;
+  overscroll-behavior: none;
+}
+
+body {
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+#root {
+  height: 100vh;
+}
+
+button {
+  font-family: inherit;
+  color: inherit;
+}
+
+input,
+select {
+  font-family: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid var(--violet);
+  outline-offset: 2px;
+}

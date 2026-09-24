@@ -1,0 +1,69 @@
+{
+  "name": "@arduos/desktop",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Ardu OS Windows desktop shell",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^44.4.3",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "org.arduos.desktop",
+    "productName": "Ardu OS",
+    "copyright": "Ardu OS",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "main.cjs",
+      "preload.cjs"
+    ],
+    "extraResources": [
+      {
+        "from": "../apps/ui/dist",
+        "to": "ui"
+      },
+      {
+        "from": "../services/hardware-api",
+        "to": "backend-src",
+        "filter": [
+          "**/*",
+          "!**/__pycache__/**",
+          "!**/.venv/**",
+          "!**/data/**",
+          "!**/logs/**",
+          "!**/tests/**"
+        ]
+      },
+      {
+        "from": "backend-dist",
+        "to": "backend"
+      },
+      {
+        "from": "../firmware",
+        "to": "firmware"
+      },
+      {
+        "from": "../vendor/tools",
+        "to": "tools"
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "artifactName": "ArduOS-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "Ardu OS"
+    }
+  }
+}
