@@ -1,4 +1,6 @@
 import { api } from '../services/api';
+import { isDemoMode } from '../services/mode';
+import { connectArduinoPort, isWebSerialSupported } from '../services/serial';
 import type { DeviceInfo, HardwareStatus, WsEvent } from '../services/types';
 import { connectSocket, subscribeSocket } from '../services/ws';
 import { createStore } from './store';
@@ -127,6 +129,18 @@ export function describeHardware(
     default:
       return { label: 'Starting...', tone: 'muted' };
   }
+}
+
+/** True when this page can ask the browser for a USB board (hosted build). */
+export function canConnectArduino(): boolean {
+  return isDemoMode() && isWebSerialSupported() && hardware.get().simulated;
+}
+
+/** Opens the browser's device picker and switches the app to the real board. */
+export async function connectArduino(): Promise<void> {
+  await connectArduinoPort();
+  await api.setHardwareMode('auto').catch(() => undefined);
+  await refreshHardware();
 }
 
 /** True when real hardware is connected, ready and not simulating. */

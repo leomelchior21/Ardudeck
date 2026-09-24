@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getComponent, pinsForKinds } from '@ardudeck/core';
 import type { ComponentDef, NodeComponentId, PinId } from '@ardudeck/core';
-import { api } from '../../services/api';
+import { ApiError, api } from '../../services/api';
+import { isDemoMode } from '../../services/mode';
+import { isWebSerialSupported } from '../../services/serial';
 import { go } from '../../state/navigation';
 import { lastReading, rememberReading } from '../../state/lastReading';
 import { startRuleFromReading } from '../../state/flowOps';
-import { hardware as hardwareStore, refreshHardware } from '../../state/hardware';
+import { connectArduino, hardware as hardwareStore, refreshHardware } from '../../state/hardware';
 import { showError, showToast } from '../../state/toast';
 import { useStore } from '../../state/store';
 import { Button } from '../../ui/Button';
@@ -118,6 +120,19 @@ export function LiveSensorScreen() {
     }
   };
 
+  const handleConnectArduino = async () => {
+    setBusy(true);
+    try {
+      await connectArduino();
+      await refreshHardware();
+      showToast('Arduino connected.');
+    } catch (error) {
+      if (!(error instanceof ApiError && error.code === 'cancelled')) showError(error);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handlePrepareArduino = async () => {
     setBusy(true);
     try {
@@ -131,6 +146,7 @@ export function LiveSensorScreen() {
   };
 
   const needsHardware = hardwareStatus.state !== 'ready' && !simulated;
+  const canConnect = simulated && isDemoMode() && isWebSerialSupported();
 
   return (
     <>
@@ -201,13 +217,22 @@ export function LiveSensorScreen() {
                   <>
                     <div className="note">
                       <Icon name="usb" size={18} />
-                      <span>Connect your Arduino with the USB cable to see real values.</span>
+                      <span>
+                        {canConnect
+                          ? 'Plug in your Arduino and let the browser ask for permission.'
+                          : 'Connect your Arduino with the USB cable to see real values.'}
+                      </span>
                     </div>
-                    <Button
-                      variant="primary"
-                      onClick={() => void handleTrySimulation()}
-                      disabled={busy}
-                    >
+                    {canConnect ? (
+                      <Button
+                        variant="primary"
+                        onClick={() => void handleConnectArduino()}
+                        disabled={busy}
+                      >
+                        Connect Arduino
+                      </Button>
+                    ) : null}
+                    <Button onClick={() => void handleTrySimulation()} disabled={busy}>
                       Try simulation
                     </Button>
                   </>

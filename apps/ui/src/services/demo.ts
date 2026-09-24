@@ -1,12 +1,12 @@
 /**
- * Browser demo backend.
+ * Browser backend.
  *
  * The desktop product talks to a local Python service for hardware, runtime,
  * projects and deploy. On static hosting such as Vercel there is no service,
- * so this module runs the same simulation inside the tab: sensors drift like
- * real ones, the runtime evaluates the flow, projects live in localStorage,
- * and uploading to a real Arduino is refused with the same friendly message
- * the product uses when no board is plugged in.
+ * so this module runs the backend inside the tab: projects live in
+ * localStorage, the runtime evaluates flows, and the board surface is either
+ * the built-in simulation or a real Arduino the student granted over Web
+ * Serial. Uploading a standalone program still needs the desktop toolchain.
  */
 import { isPinId } from '@ardudeck/core';
 import type { IrAction, IrCondition, IrProgram, IrRead } from '@ardudeck/core';
@@ -18,9 +18,17 @@ import {
   onDemoMode,
   setLiveMode,
 } from './mode';
+import {
+  attachedSerialHardware,
+  autoConnectSerial,
+  flashBridgeFirmware,
+} from './serial';
 import type {
+  BrowserHardwareBackend,
+  BrowserWatch,
   DeployJob,
   DeployStep,
+  DeviceInfo,
   HardwareStatus,
   Health,
   OutputState,
@@ -85,20 +93,14 @@ function evaluate(value: number | null, condition: IrCondition, read: IrRead | n
   }
 }
 
-interface DemoWatch {
-  pin: string;
-  kind: string;
-  pullup: boolean;
-}
-
 interface DemoValue {
   pin: string;
   kind: string;
   value: number;
 }
 
-function watchesFor(program: IrProgram): DemoWatch[] {
-  const watches: DemoWatch[] = [];
+function watchesFor(program: IrProgram): BrowserWatch[] {
+  const watches: BrowserWatch[] = [];
   const seen = new Set<string>();
   for (const read of program.reads) {
     if (read.kind === 'distance' || read.pin === undefined) continue;
@@ -109,11 +111,12 @@ function watchesFor(program: IrProgram): DemoWatch[] {
   return watches;
 }
 
-class DemoHardware {
-  readonly source = 'mock';
+class DemoHardware implements BrowserHardwareBackend {
+  readonly simulated = true;
   readonly board = 'Simulated Arduino';
+  readonly source = 'mock';
 
-  private watches = new Map<string, DemoWatch>();
+  private watches = new Map<string, BrowserWatch>();
   private analogBases = new Map<string, number>();
   private phases = new Map<string, number>();
   private analogValues = new Map<string, number>();
@@ -139,7 +142,13 @@ class DemoHardware {
     this.timer = window.setInterval(() => this.tick(), HARDWARE_TICK_MS);
   }
 
-  setWatches(watches: DemoWatch[]): void {
+  stop(): void {
+    if (this.timer === null) return;
+    window.clearInterval(this.timer);
+    this.timer = null;
+  }
+
+  setWatches(watches: BrowserWatch[]): void {
     this.watches = new Map(watches.map((watch) => [watch.pin, watch]));
   }
 
@@ -163,13 +172,13 @@ class DemoHardware {
     return value;
   }
 
-  setMockValue(rawPin: string, rawValue: number): void {
+  setMockValue(rawPin: string, rawValue: number): { applied: boolean } {
     const pin = rawPin.toUpperCase();
     if (pin.startsWith('A')) {
       const base = Math.max(0, Math.min(1023, rawValue));
       this.analogBases.set(pin, base);
       this.pushValue(pin, 'analog', Math.round(base));
-      return;
+      return { applied: true };
     }
     const digital = rawValue ? 1 : 0;
     this.digitalValues.set(pin, digital);
@@ -179,7 +188,26 @@ class DemoHardware {
         this.distanceBases.set(key, Math.max(0, Math.min(200, rawValue)));
       }
     }
+    return { applied: true };
   }
+
+  // The simulation has no electrical outputs; the runtime records their state.
+
+  writeDigital(): void {}
+
+  writePwm(): void {}
+
+  writeServo(): void {}
+
+  writeTone(): void {}
+
+  stopTone(): void {}
+
+  writeRgb(): void {}
+
+  writeMotor(): void {}
+
+  allSafe(): void {}
 
   private tick(): void {
     for (const watch of this.watches.values()) {
@@ -214,7 +242,7 @@ class DemoHardware {
 
 class DemoRuntime {
   private readonly program: IrProgram;
-  private readonly hardware: DemoHardware;
+  private readonly hardware: BrowserHardwareBackend;
   private readonly readsByVar = new Map<string, IrRead>();
   private values = new Map<string, ReadValue>();
   private truth = new Map<string, boolean>();
@@ -225,7 +253,7 @@ class DemoRuntime {
   private tick = 0;
   private lastPublish = 0;
 
-  constructor(program: IrProgram, hardware: DemoHardware) {
+  constructor(program: IrProgram, hardware: BrowserHardwareBackend) {
     this.program = program;
     this.hardware = hardware;
     for (const read of program.reads) this.readsByVar.set(read.var, read);
@@ -243,6 +271,7 @@ class DemoRuntime {
       window.clearTimeout(this.timer);
       this.timer = null;
     }
+    this.hardware.allSafe();
     this.outputs.clear();
     this.applied.clear();
     this.publish(false);
@@ -252,8 +281,8 @@ class DemoRuntime {
     return {
       running: this.running,
       title: this.program.title,
-      mode: 'simulated',
-      source: 'mock',
+      mode: this.hardware.simulated ? 'simulated' : 'hardware',
+      source: this.hardware.simulated ? 'mock' : 'hardware',
       tick: this.tick,
       values: Object.fromEntries(this.values),
       rules: Object.fromEntries(this.truth),
@@ -340,18 +369,23 @@ class DemoRuntime {
     switch (action.op) {
       case 'digitalWrite':
         state = action.value ? 'ON' : 'OFF';
+        if (action.pin) this.hardware.writeDigital(action.pin, action.value);
         break;
       case 'pwmWrite':
         state = `${action.value}`;
+        if (action.pin) this.hardware.writePwm(action.pin, action.value);
         break;
       case 'servoWrite':
         state = `${action.angle} deg`;
+        if (action.pin) this.hardware.writeServo(action.pin, action.angle);
         break;
       case 'tone':
         state = `${action.frequency} Hz`;
+        if (action.pin) this.hardware.writeTone(action.pin, action.frequency, action.durationMs);
         break;
       case 'stopTone':
         state = 'silent';
+        if (action.pin) this.hardware.stopTone(action.pin);
         break;
       case 'delay':
         wait = Math.max(0, Math.min(action.ms, 5000));
@@ -362,12 +396,27 @@ class DemoRuntime {
           action.red === 0 && action.green === 0 && action.blue === 0
             ? 'OFF'
             : `RGB ${action.red},${action.green},${action.blue}`;
+        this.hardware.writeRgb(
+          action.redPin,
+          action.greenPin,
+          action.bluePin,
+          action.red,
+          action.green,
+          action.blue,
+        );
         break;
       case 'motorWrite':
         state =
           action.direction === 'stop' || action.direction === 'brake'
             ? 'OFF'
             : `${action.direction.toUpperCase()} ${action.speed}`;
+        this.hardware.writeMotor(
+          action.pin ?? '',
+          action.in2Pin,
+          action.enablePin,
+          action.direction,
+          action.speed,
+        );
         break;
     }
     this.outputs.set(action.nodeId, {
@@ -406,6 +455,15 @@ class DemoJobs {
   }
 
   startBridge(): DeployJob {
+    if (this.job !== null && this.job.status === 'running') {
+      throw new ApiError(
+        'An upload is already running.',
+        'deploy-busy',
+        'Wait for it to finish.',
+        undefined,
+        409,
+      );
+    }
     const job: DeployJob = {
       id: randomId(),
       kind: 'bridge',
@@ -424,35 +482,61 @@ class DemoJobs {
     };
     this.job = job;
     this.generation += 1;
+    const generation = this.generation;
     this.publish();
 
-    this.plan(job, this.generation, [
-      [40, () => this.setStep(job, 'prepare', 'running')],
-      [
-        220,
-        () => {
-          this.setStep(job, 'prepare', 'ok', 'Bridge ready');
-          this.setStep(job, 'check', 'running');
-        },
-      ],
-      [
-        260,
-        () => {
-          this.setStep(job, 'check', 'ok', 'Arduino found');
-          this.setStep(job, 'bridge', 'running');
-        },
-      ],
-      [
-        540,
-        () => {
-          this.setStep(job, 'bridge', 'ok', 'Bridge installed');
-          this.setStep(job, 'finish', 'ok', 'READY');
-          job.status = 'ok';
-          job.finishedAt = Date.now() / 1000;
-          job.result = { port: 'SIM1', board: 'Simulated Arduino' };
-        },
-      ],
-    ]);
+    const isCurrent = () => generation === this.generation && job.status === 'running';
+
+    window.setTimeout(() => {
+      if (!isCurrent()) return;
+      this.setStep(job, 'prepare', 'running');
+      this.publish();
+    }, 20);
+    window.setTimeout(() => {
+      if (!isCurrent()) return;
+      this.setStep(job, 'prepare', 'ok', 'Bridge ready');
+      this.setStep(job, 'check', 'ok', 'Arduino found');
+      this.setStep(job, 'bridge', 'running');
+      this.publish();
+    }, 180);
+
+    void flashBridgeFirmware(
+      (progress) => {
+        if (!isCurrent()) return;
+        this.setStep(
+          job,
+          'bridge',
+          'running',
+          `${progress.status} ${Math.round(progress.percent)}%`,
+        );
+        this.publish();
+      },
+      (line) => {
+        if (!isCurrent()) return;
+        publishLocal({ type: 'compile-log', line });
+      },
+    )
+      .then(() => {
+        if (!isCurrent()) return;
+        this.setStep(job, 'bridge', 'ok', 'Bridge installed');
+        this.setStep(job, 'finish', 'ok', 'READY');
+        job.status = 'ok';
+        job.finishedAt = Date.now() / 1000;
+        job.result = { port: 'USB', board: 'Arduino Uno' };
+        this.publish();
+      })
+      .catch((error: unknown) => {
+        if (!isCurrent()) return;
+        const apiError = error instanceof ApiError ? error : null;
+        const message = apiError?.message ?? 'The Arduino could not be prepared.';
+        const hints = apiError?.hint !== undefined ? [apiError.hint] : [];
+        this.setStep(job, 'bridge', 'error', message);
+        job.status = 'error';
+        job.finishedAt = Date.now() / 1000;
+        job.error = { message, hints, details: apiError?.details ?? '' };
+        this.publish();
+      });
+
     return this.snapshot(job);
   }
 
@@ -470,22 +554,6 @@ class DemoJobs {
       this.publish();
     }
     return this.current();
-  }
-
-  private plan(
-    job: DeployJob,
-    generation: number,
-    script: [number, () => void][],
-  ): void {
-    let at = 0;
-    for (const [wait, action] of script) {
-      at += wait;
-      window.setTimeout(() => {
-        if (generation !== this.generation || job.status !== 'running') return;
-        action();
-        this.publish();
-      }, at);
-    }
   }
 
   private setStep(
@@ -596,9 +664,19 @@ function toRecord(project: StoredProject): ProjectRecord {
   };
 }
 
-const hardware = new DemoHardware();
+const simulation = new DemoHardware();
 const jobs = new DemoJobs();
 let runtime: DemoRuntime | null = null;
+let preferSimulation = false;
+
+/** The board surface the runtime should use: a real Arduino, or simulation. */
+function activeHardware(): BrowserHardwareBackend {
+  if (!preferSimulation) {
+    const serial = attachedSerialHardware();
+    if (serial !== null) return serial;
+  }
+  return simulation;
+}
 
 function runtimeStatus(): RuntimeStatus {
   if (runtime !== null) return runtime.status();
@@ -619,28 +697,30 @@ function hardwarePayload(): {
   hardware: HardwareStatus;
   simulated: boolean;
   mockMode: string;
-  devices: never[];
+  devices: DeviceInfo[];
 } {
+  const backend = activeHardware();
   return {
     ok: true,
-    hardware: hardware.status(),
-    simulated: true,
-    mockMode: 'demo',
+    hardware: backend.status(),
+    simulated: backend.simulated,
+    mockMode: backend.simulated ? 'demo' : 'web-serial',
     devices: [],
   };
 }
 
 function health(): Health {
+  const backend = activeHardware();
   return {
     status: 'ok',
     app: 'ArduDeck',
     version: '0.1.0-demo',
     apiVersion: 1,
-    mockMode: 'demo',
-    hardware: hardware.status(),
-    simulated: true,
+    mockMode: backend.simulated ? 'demo' : 'web-serial',
+    hardware: backend.status(),
+    simulated: backend.simulated,
     arduinoCli: { available: false, version: null, avrCore: false },
-    bridge: { state: hardware.status().state, fqbn: 'arduino:avr:uno' },
+    bridge: { state: backend.status().state, fqbn: 'arduino:avr:uno' },
     runtime: { running: runtimeStatus().running },
     platform: {
       system: 'Browser',
@@ -654,19 +734,26 @@ function health(): Health {
 }
 
 function setHardwareMode(mode: unknown): unknown {
-  if (mode === 'off') {
-    throw new ApiError(
-      'Real hardware needs the Ardu OS desktop app.',
-      'no-hardware',
-      'The browser demo always runs in simulation.',
-    );
+  if (mode === 'off' || mode === 'auto') {
+    const serial = attachedSerialHardware();
+    if (mode === 'off' && serial === null) {
+      throw new ApiError(
+        'Connect your Arduino to start.',
+        'no-hardware',
+        'Click Connect Arduino and choose your board.',
+      );
+    }
+    preferSimulation = false;
+    const backend = activeHardware();
+    return { ok: true, hardware: backend.status(), simulated: backend.simulated };
   }
-  return { ok: true, hardware: hardware.status(), simulated: true };
+  preferSimulation = true;
+  return { ok: true, hardware: simulation.status(), simulated: true };
 }
 
 function watch(raw: unknown): { ok: true; watching: number } {
   const list = Array.isArray(raw) ? raw : [];
-  const watches: DemoWatch[] = [];
+  const watches: BrowserWatch[] = [];
   for (const item of list) {
     if (!isRecord(item)) continue;
     const pin = typeof item.pin === 'string' ? item.pin.toUpperCase() : '';
@@ -676,30 +763,34 @@ function watch(raw: unknown): { ok: true; watching: number } {
     }
     watches.push({ pin, kind, pullup: item.pullup === true });
   }
-  hardware.setWatches(watches);
+  activeHardware().setWatches(watches);
   return { ok: true, watching: watches.length };
 }
 
 function readOnce(body: Record<string, unknown>): unknown {
+  const backend = activeHardware();
   if (body.kind === 'distance') {
     const trig = typeof body.trig === 'string' ? body.trig.toUpperCase() : '';
     const echo = typeof body.echo === 'string' ? body.echo.toUpperCase() : '';
     if (!isPinId(trig) || !isPinId(echo)) {
       throw new ApiError('Choose pins for the distance sensor.', 'bad-pin');
     }
-    return { ok: true, value: hardware.distanceCm(trig, echo) };
+    return { ok: true, value: backend.distanceCm(trig, echo) };
   }
   if ((body.kind === 'analog' || body.kind === 'digital') && typeof body.pin === 'string') {
     const pin = body.pin.toUpperCase();
     if (!isPinId(pin)) {
       throw new ApiError(`${pin} is not a pin on the Arduino Uno.`, 'bad-pin');
     }
-    return { ok: true, value: body.kind === 'analog' ? hardware.analog(pin) : hardware.digital(pin) };
+    return {
+      ok: true,
+      value: body.kind === 'analog' ? backend.analog(pin) : backend.digital(pin),
+    };
   }
   throw new ApiError('This reading is not supported.', 'bad-kind');
 }
 
-function startRuntime(program: unknown): { ok: true; runtime: RuntimeStatus } {
+function startRuntime(program: unknown, simulate: unknown): { ok: true; runtime: RuntimeStatus } {
   if (!isRecord(program) || !Array.isArray(program.reads) || !Array.isArray(program.rules)) {
     throw new ApiError('This flow could not be read.', 'invalid-flow', undefined, undefined, 400);
   }
@@ -712,8 +803,32 @@ function startRuntime(program: unknown): { ok: true; runtime: RuntimeStatus } {
       400,
     );
   }
+
+  const backend = simulate === true ? simulation : activeHardware();
+  if (!backend.simulated) {
+    const state = backend.status().state;
+    if (state === 'needs-bridge') {
+      throw new ApiError(
+        'Your Arduino needs to be prepared first.',
+        'needs-bridge',
+        'ArduDeck can install what it needs and try again.',
+        undefined,
+        409,
+      );
+    }
+    if (state !== 'ready' && state !== 'deployed') {
+      throw new ApiError(
+        'The Arduino is not ready yet.',
+        'not-ready',
+        'Check the USB cable and try again.',
+        undefined,
+        409,
+      );
+    }
+  }
+
   runtime?.stop();
-  runtime = new DemoRuntime(program as unknown as IrProgram, hardware);
+  runtime = new DemoRuntime(program as unknown as IrProgram, backend);
   runtime.start();
   return { ok: true, runtime: runtime.status() };
 }
@@ -724,14 +839,17 @@ function stopRuntime(): { ok: true; runtime: RuntimeStatus } {
   return { ok: true, runtime: runtimeStatus() };
 }
 
-function mockValue(body: Record<string, unknown>): { ok: true; applied: boolean } {
+function mockValue(body: Record<string, unknown>): {
+  ok: true;
+  applied: boolean;
+  reason?: string;
+} {
   const pin = typeof body.pin === 'string' ? body.pin.toUpperCase() : '';
   const value = typeof body.value === 'number' ? body.value : 0;
   if (!isPinId(pin)) {
     throw new ApiError(`${pin} is not a pin on the Arduino Uno.`, 'bad-pin');
   }
-  hardware.setMockValue(pin, value);
-  return { ok: true, applied: true };
+  return { ok: true, ...activeHardware().setMockValue(pin, value) };
 }
 
 function deploy(body: Record<string, unknown>): never {
@@ -743,6 +861,15 @@ function deploy(body: Record<string, unknown>): never {
       'Open the code view and check the last change.',
       undefined,
       400,
+    );
+  }
+  if (!activeHardware().simulated) {
+    throw new ApiError(
+      'This page can run a flow live, but cannot build standalone programs.',
+      'no-compiler',
+      'Use Test Live on the board, or open the Ardu OS desktop app to upload.',
+      undefined,
+      409,
     );
   }
   throw new ApiError(
@@ -810,6 +937,7 @@ function deleteProject(id: string): void {
 }
 
 function teacherSystem(): TeacherSystem {
+  const backend = activeHardware();
   return {
     app: { version: '0.1.0-demo', fqbn: 'arduino:avr:uno' },
     platform: {
@@ -830,12 +958,23 @@ function teacherSystem(): TeacherSystem {
       version: null,
       avrCore: false,
     },
-    bridge: { sketch: 'firmware/ardudeck-bridge', present: false },
-    hardware: { hardware: hardware.status(), simulated: true, devices: [] },
+    bridge: { sketch: 'firmware/ardudeck-bridge', present: !backend.simulated },
+    hardware: { hardware: backend.status(), simulated: backend.simulated, devices: [] },
     deploy: jobs.current(),
     webClients: 1,
     paths: {},
   };
+}
+
+function installBridge(): { ok: true; job: DeployJob } {
+  if (attachedSerialHardware() === null) {
+    throw new ApiError(
+      'Connect your Arduino to start.',
+      'no-hardware',
+      'Click Connect Arduino and choose your board.',
+    );
+  }
+  return { ok: true, job: jobs.startBridge() };
 }
 
 function teacherLogs(kind: string): string[] {
@@ -895,17 +1034,17 @@ function handle(
     case 'POST /api/hardware/mode':
       return setHardwareMode(body.mode);
     case 'POST /api/hardware/reconnect':
-      return { ok: true, hardware: hardware.status() };
+      return { ok: true, hardware: activeHardware().status() };
     case 'POST /api/hardware/use':
-      return { ok: true, hardware: hardware.status() };
+      return { ok: true, hardware: activeHardware().status() };
     case 'POST /api/hardware/watch':
       return watch(body.watches);
     case 'POST /api/hardware/install-bridge':
-      return { ok: true, job: jobs.startBridge() };
+      return installBridge();
     case 'POST /api/hardware/read':
       return readOnce(body);
     case 'POST /api/runtime/start':
-      return startRuntime(body.program);
+      return startRuntime(body.program, body.simulate);
     case 'POST /api/runtime/stop':
       return stopRuntime();
     case 'GET /api/runtime/status':
@@ -983,15 +1122,17 @@ export async function resolveBackendMode(): Promise<void> {
 }
 
 onDemoMode(() => {
-  hardware.start();
+  simulation.start();
   publishLocal({ type: 'socket', status: 'open' });
   const hello: WsEvent = {
     type: 'hello',
-    hardware: hardware.status(),
+    hardware: simulation.status(),
     simulated: true,
     mockMode: 'demo',
     devices: [],
     runtime: runtimeStatus(),
   };
   publishLocal(hello);
+  // A board the student granted before reconnects on its own, no dialog.
+  void autoConnectSerial();
 });

@@ -119,13 +119,23 @@ The whole product works without a Raspberry Pi and without an Arduino:
 
 `npm run dev` uses `ARDUDECK_MOCK=auto`. Nothing in production depends on mock mode.
 
-### Browser demo (static hosting)
+### Browser build (static hosting)
 
 When the UI is served without the local Python service (for example on
-<https://ardudeck.vercel.app>), it probes the service once at startup. If nothing answers, the same
-simulation runs entirely inside the tab: sensors drift like real ones, the runtime evaluates flows,
-projects are stored in `localStorage`, and Deploy is refused with *"Connect your Arduino to
-start."* The Electron desktop shell is unaffected - it always uses its own backend.
+<https://ardudeck.vercel.app>), it probes the service once at startup. If nothing answers, the
+backend runs inside the tab: projects live in `localStorage` and the runtime evaluates flows.
+
+The browser build can also drive a real Arduino over **Web Serial** (Chrome or Edge on a computer,
+no driver install). The student clicks **Connect Arduino** once; the browser asks for permission,
+the ArduDeck Bridge firmware is flashed straight from the page when the board does not have it,
+and from then on Live Sensor, Test Live and Live Mode run against the real board. The grant is
+remembered, so later visits reconnect on their own. Web USB is deliberately not used on Windows:
+it would require replacing the board's serial driver with WinUSB (Zadig) and would break normal
+COM use.
+
+Uploading a standalone program stays desktop-only: the hosted build has no C++ toolchain, so
+Deploy points at Live Mode or the Ardu OS app. The Electron desktop shell is unaffected - it
+always uses its own backend.
 
 ---
 

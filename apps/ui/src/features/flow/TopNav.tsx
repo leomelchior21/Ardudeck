@@ -1,9 +1,17 @@
 import { useState } from 'react';
-import { describeHardware, hardware as hardwareStore } from '../../state/hardware';
+import { ApiError, api } from '../../services/api';
+import { isDemoMode } from '../../services/mode';
+import { isWebSerialSupported } from '../../services/serial';
+import {
+  canConnectArduino,
+  connectArduino,
+  describeHardware,
+  hardware as hardwareStore,
+} from '../../state/hardware';
 import { go } from '../../state/navigation';
 import { newProject, project as projectStore } from '../../state/project';
 import { useStore } from '../../state/store';
-import { showToast } from '../../state/toast';
+import { showError, showToast } from '../../state/toast';
 import { ArduDeckWordmark } from '../../ui/Brand';
 import { Icon } from '../../ui/Icon';
 
@@ -54,6 +62,54 @@ export function HardwarePill() {
   const connected = status.state === 'ready' || status.state === 'deployed';
   const showDetail = connected && !simulated && Boolean(status.port);
   const title = showDetail ? 'Arduino Connected' : label;
+  const connectable = simulated && isDemoMode() && isWebSerialSupported();
+
+  const openPicker = () => {
+    if (!canConnectArduino()) return;
+    void connectArduino().catch((error: unknown) => {
+      if (error instanceof ApiError && error.code === 'cancelled') return;
+      showError(error);
+    });
+  };
+
+  if (connectable) {
+    return (
+      <button
+        type="button"
+        className="fb-status fb-status--accent fb-status--action"
+        onClick={openPicker}
+        title="Choose your Arduino in the browser dialog"
+      >
+        <span className="fb-status-dot" />
+        <span className="fb-status-copy">
+          <span className="fb-status-title">Connect Arduino</span>
+          <span className="fb-status-sub">Not detected yet</span>
+        </span>
+      </button>
+    );
+  }
+
+  if (!simulated && status.state === 'needs-bridge' && isDemoMode()) {
+    return (
+      <button
+        type="button"
+        className="fb-status fb-status--warn fb-status--action"
+        onClick={() => {
+          void api
+            .installBridge()
+            .then(() => showToast('Preparing your Arduino...'))
+            .catch(showError);
+        }}
+        title="Install ArduDeck Bridge on the board"
+      >
+        <span className="fb-status-dot" />
+        <span className="fb-status-copy">
+          <span className="fb-status-title">Arduino needs setup</span>
+          <span className="fb-status-sub">Tap to prepare</span>
+        </span>
+      </button>
+    );
+  }
 
   return (
     <div className={`fb-status fb-status--${tone}`}>

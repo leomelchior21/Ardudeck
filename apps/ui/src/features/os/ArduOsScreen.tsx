@@ -1,7 +1,10 @@
-import { describeHardware, hardware as hardwareStore } from '../../state/hardware';
+import { ApiError } from '../../services/api';
+import { isDemoMode } from '../../services/mode';
+import { isWebSerialSupported } from '../../services/serial';
+import { canConnectArduino, connectArduino, describeHardware, hardware as hardwareStore } from '../../state/hardware';
 import { go } from '../../state/navigation';
 import { useStore } from '../../state/store';
-import { showToast } from '../../state/toast';
+import { showError, showToast } from '../../state/toast';
 import { ArduOsLogo } from '../../ui/Brand';
 import { Icon } from '../../ui/Icon';
 import { useHoldToUnlock } from '../../ui/useHoldToUnlock';
@@ -19,6 +22,30 @@ function HardwareState() {
   const simulated = useStore(hardwareStore, (state) => state.simulated);
   const mockMode = useStore(hardwareStore, (state) => state.mockMode);
   const { label, tone } = describeHardware(status, simulated, mockMode);
+  const connectable = simulated && isDemoMode() && isWebSerialSupported();
+
+  if (connectable) {
+    return (
+      <button
+        type="button"
+        className="os-status os-status--accent os-status--action"
+        onClick={() => {
+          if (!canConnectArduino()) return;
+          void connectArduino()
+            .then(() => showToast('Arduino connected.'))
+            .catch((error: unknown) => {
+              if (error instanceof ApiError && error.code === 'cancelled') return;
+              showError(error);
+            });
+        }}
+        title="Choose your Arduino in the browser dialog"
+      >
+        <span className="os-status-dot" />
+        Connect Arduino
+      </button>
+    );
+  }
+
   return (
     <div className={`os-status os-status--${tone}`}>
       <span className="os-status-dot" />

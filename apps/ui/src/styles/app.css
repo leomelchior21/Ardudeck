@@ -180,6 +180,16 @@
 .os-status--warn .os-status-dot {
   background: var(--yellow);
 }
+button.os-status {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+}
+button.os-status:hover {
+  color: var(--lime);
+}
 
 .os-gear {
   width: 42px;

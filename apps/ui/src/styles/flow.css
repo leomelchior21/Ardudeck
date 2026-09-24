@@ -159,6 +159,14 @@
 .fb-status--sim .fb-status-dot {
   background: var(--fb-violet);
 }
+button.fb-status {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+button.fb-status:hover {
+  border-color: var(--fb-lime);
+}
 .fb-status-copy {
   display: flex;
   flex-direction: column;

@@ -36,6 +36,53 @@ export interface ReadValue {
   ok: boolean;
 }
 
+/** One pin the browser runtime should stream while a program runs. */
+export interface BrowserWatch {
+  pin: string;
+  kind: 'analog' | 'digital';
+  pullup?: boolean;
+}
+
+/**
+ * The board surface the in-browser runtime talks to. Two implementations
+ * exist: the simulation used when nothing is connected, and a real Arduino
+ * over Web Serial (served from a static page, no Python service).
+ */
+export interface BrowserHardwareBackend {
+  readonly simulated: boolean;
+  readonly board: string;
+  status(): HardwareStatus;
+  start(): void;
+  stop(): void;
+  setWatches(watches: BrowserWatch[]): void;
+  analog(pin: string): number | null;
+  digital(pin: string): number | null;
+  distance(trig: string, echo: string): number | null;
+  distanceCm(trig: string, echo: string): number | null;
+  setMockValue(pin: string, value: number): { applied: boolean; reason?: string };
+  writeDigital(pin: string, value: number): void;
+  writePwm(pin: string, value: number): void;
+  writeServo(pin: string, angle: number): void;
+  writeTone(pin: string, frequency: number, durationMs: number): void;
+  stopTone(pin: string): void;
+  writeRgb(
+    redPin: string,
+    greenPin: string,
+    bluePin: string,
+    red: number,
+    green: number,
+    blue: number,
+  ): void;
+  writeMotor(
+    in1Pin: string,
+    in2Pin: string,
+    enablePin: string,
+    direction: string,
+    speed: number,
+  ): void;
+  allSafe(): void;
+}
+
 export interface OutputState {
   nodeId: string;
   name: string;
