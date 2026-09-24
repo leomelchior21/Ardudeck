@@ -119,6 +119,14 @@ The whole product works without a Raspberry Pi and without an Arduino:
 
 `npm run dev` uses `ARDUDECK_MOCK=auto`. Nothing in production depends on mock mode.
 
+### Browser demo (static hosting)
+
+When the UI is served without the local Python service (for example on
+<https://ardudeck.vercel.app>), it probes the service once at startup. If nothing answers, the same
+simulation runs entirely inside the tab: sensors drift like real ones, the runtime evaluates flows,
+projects are stored in `localStorage`, and Deploy is refused with *"Connect your Arduino to
+start."* The Electron desktop shell is unaffected - it always uses its own backend.
+
 ---
 
 ## RASPBERRY PI (SECONDARY / EXPERIMENTAL HARDWARE CONSOLE TARGET)

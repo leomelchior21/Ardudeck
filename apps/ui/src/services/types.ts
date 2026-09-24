@@ -144,7 +144,7 @@ export type WsEvent =
   | { type: 'socket'; status: 'open' | 'closed' }
   | { type: 'hardware'; state: HardwareState; source: string; board: string | null; port: string | null; detail: string | null }
   | { type: 'values'; source: string; values: Record<string, { pin: string; kind: string; value: number }> }
-  | { type: 'runtime'; running: boolean; values?: Record<string, ReadValue>; rules?: Record<string, boolean>; outputs?: Record<string, OutputState>; mode?: 'simulated' | 'hardware' | null; tick?: number }
+  | { type: 'runtime'; running: boolean; values?: Record<string, ReadValue>; rules?: Record<string, boolean>; outputs?: Record<string, OutputState>; mode?: 'simulated' | 'hardware' | null; tick?: number; title?: string | null; source?: string | null; loopDelayMs?: number | null }
   | { type: 'deploy'; job: DeployJob }
   | { type: 'serial'; direction: string; text: string; port: string }
   | { type: 'compile-log'; line: string }

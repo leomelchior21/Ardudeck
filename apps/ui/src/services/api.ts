@@ -1,3 +1,6 @@
+import { demoRequest } from './demo';
+import { ApiError } from './errors';
+import { enableDemoMode, isDemoMode, isDesktopShell } from './mode';
 import type {
   DeployJob,
   DeviceInfo,
@@ -9,27 +12,7 @@ import type {
   TeacherSystem,
 } from './types';
 
-export class ApiError extends Error {
-  readonly code: string;
-  readonly hint: string | undefined;
-  readonly details: string | undefined;
-  readonly status: number;
-
-  constructor(
-    message: string,
-    code: string,
-    hint?: string,
-    details?: string,
-    status = 0,
-  ) {
-    super(message);
-    this.name = 'ApiError';
-    this.code = code;
-    this.hint = hint;
-    this.details = details;
-    this.status = status;
-  }
-}
+export { ApiError };
 
 interface ErrorBody {
   ok: false;
@@ -43,6 +26,8 @@ function isErrorBody(body: unknown): body is ErrorBody {
 }
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  if (isDemoMode()) return demoRequest<T>(path, init);
+
   let response: Response;
   try {
     response = await fetch(path, {
@@ -50,6 +35,10 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
       headers: { 'Content-Type': 'application/json', ...(init.headers ?? {}) },
     });
   } catch {
+    if (!isDesktopShell()) {
+      enableDemoMode();
+      return demoRequest<T>(path, init);
+    }
     throw new ApiError(
       'ArduDeck is not responding.',
       'network',

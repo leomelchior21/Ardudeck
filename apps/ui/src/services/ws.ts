@@ -1,4 +1,5 @@
 import type { WsEvent } from './types';
+import { isDemoMode } from './mode';
 
 type Listener = (event: WsEvent) => void;
 
@@ -13,6 +14,11 @@ export function subscribeSocket(listener: Listener): () => void {
   return () => {
     listeners.delete(listener);
   };
+}
+
+/** Broadcasts an event without a network socket (browser demo mode). */
+export function publishLocal(event: WsEvent): void {
+  emit(event);
 }
 
 function emit(event: WsEvent): void {
@@ -37,6 +43,7 @@ function clearTimers(): void {
 }
 
 function scheduleReconnect(): void {
+  if (isDemoMode()) return;
   if (reconnectTimer !== null) return;
   const delay = Math.min(5000, 400 * 2 ** Math.min(attempts, 4));
   attempts += 1;
@@ -47,6 +54,11 @@ function scheduleReconnect(): void {
 }
 
 export function connectSocket(): void {
+  if (isDemoMode()) {
+    emit({ type: 'socket', status: 'open' });
+    return;
+  }
+
   if (
     socket !== null &&
     (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)
@@ -84,6 +96,7 @@ export function connectSocket(): void {
   socket.onclose = () => {
     clearTimers();
     socket = null;
+    if (isDemoMode()) return;
     emit({ type: 'socket', status: 'closed' });
     scheduleReconnect();
   };
