@@ -17,7 +17,8 @@ const NAV: { label: string; active?: boolean; onOpen: () => void }[] = [
 function HardwareState() {
   const status = useStore(hardwareStore, (state) => state.hardware);
   const simulated = useStore(hardwareStore, (state) => state.simulated);
-  const { label, tone } = describeHardware(status, simulated);
+  const mockMode = useStore(hardwareStore, (state) => state.mockMode);
+  const { label, tone } = describeHardware(status, simulated, mockMode);
   return (
     <div className={`os-status os-status--${tone}`}>
       <span className="os-status-dot" />

@@ -10,7 +10,6 @@ import {
 import type { Connection, NodeChange, NodeTypes } from '@xyflow/react';
 import { getComponent } from '@ardudeck/core';
 import type { FlowNode, NodeComponentId } from '@ardudeck/core';
-import { goTestLive } from '../../state/navigation';
 import {
   addComponentAt,
   connectNodes,
@@ -19,7 +18,7 @@ import {
   setNodePosition,
 } from '../../state/flowOps';
 import { resetHistory, redo, undo } from '../../state/history';
-import { getCompiled, project as projectStore, saveNow } from '../../state/project';
+import { getCompiled, project as projectStore } from '../../state/project';
 import { resetDeploy, startDeploySync, syncRuntime } from '../../state/deploy';
 import { telemetry } from '../../state/telemetry';
 import { useStore } from '../../state/store';
@@ -233,15 +232,6 @@ function FlowBuilder() {
     }
   };
 
-  const simulate = () => {
-    if (!validation.ok) {
-      showToast(validation.summary, 'error', 'Fix the highlighted block and try again.');
-      return;
-    }
-    void saveNow({ silent: true });
-    goTestLive(true);
-  };
-
   return (
     <div className="fb">
       <TopNav />
@@ -295,7 +285,7 @@ function FlowBuilder() {
 
           <CanvasHeader />
           <CanvasToolbar selectedId={selectedId ?? selectedEdgeId} onDelete={deleteSelected} />
-          <CanvasFooter onSimulate={simulate} />
+          <CanvasFooter />
 
           {flow.nodes.length === 0 ? (
             <div className="fb-empty">

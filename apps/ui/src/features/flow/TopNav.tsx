@@ -49,11 +49,11 @@ export function WindowControls() {
 export function HardwarePill() {
   const status = useStore(hardwareStore, (state) => state.hardware);
   const simulated = useStore(hardwareStore, (state) => state.simulated);
-  const deployedAt = useStore(projectStore, (state) => state.deployedAt);
-  const { label, tone } = describeHardware(status, simulated);
+  const mockMode = useStore(hardwareStore, (state) => state.mockMode);
+  const { label, tone } = describeHardware(status, simulated, mockMode);
   const connected = status.state === 'ready' || status.state === 'deployed';
   const showDetail = connected && !simulated && Boolean(status.port);
-  const title = showDetail && deployedAt ? 'Arduino Connected' : label;
+  const title = showDetail ? 'Arduino Connected' : label;
 
   return (
     <div className={`fb-status fb-status--${tone}`}>

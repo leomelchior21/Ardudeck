@@ -97,10 +97,21 @@ export interface HardwareDescription {
   tone: StatusTone;
 }
 
-export function describeHardware(status: HardwareStatus, simulated: boolean): HardwareDescription {
+export function describeHardware(
+  status: HardwareStatus,
+  simulated: boolean,
+  mockMode = 'auto',
+): HardwareDescription {
+  if (simulated) {
+    // A student who pressed "Try simulation" gets an honest SIMULATED label;
+    // otherwise the chip answers the only question that matters: is an
+    // Arduino connected? (The hosted browser demo can never reach a board.)
+    if (mockMode === 'on') return { label: 'Simulation', tone: 'sim' };
+    return { label: 'No Arduino', tone: 'muted' };
+  }
   switch (status.state) {
     case 'ready':
-      return simulated ? { label: 'Simulation', tone: 'sim' } : { label: 'Arduino Ready', tone: 'ok' };
+      return { label: 'Arduino Ready', tone: 'ok' };
     case 'deployed':
       return { label: 'Program running', tone: 'ok' };
     case 'connecting':

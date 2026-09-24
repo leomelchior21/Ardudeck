@@ -121,7 +121,7 @@ export function CanvasToolbar({
   );
 }
 
-export function CanvasFooter({ onSimulate }: { onSimulate: () => void }) {
+export function CanvasFooter() {
   return (
     <div className="fb-canvas-foot">
       <button
@@ -134,10 +134,6 @@ export function CanvasFooter({ onSimulate }: { onSimulate: () => void }) {
       >
         <Icon name="trash" size={18} strokeWidth={2} />
         Clear All
-      </button>
-      <button type="button" className="fb-button fb-button--simulate" onClick={onSimulate}>
-        <Icon name="play" size={18} strokeWidth={2.4} />
-        Simulate
       </button>
     </div>
   );

@@ -20,7 +20,8 @@ export function Pill({
 export function HardwarePill() {
   const status = useStore(hardwareStore, (state) => state.hardware);
   const simulated = useStore(hardwareStore, (state) => state.simulated);
-  const { label, tone } = describeHardware(status, simulated);
+  const mockMode = useStore(hardwareStore, (state) => state.mockMode);
+  const { label, tone } = describeHardware(status, simulated, mockMode);
   return (
     <Pill tone={tone}>
       <span className="dot" />

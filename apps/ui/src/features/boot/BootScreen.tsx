@@ -18,6 +18,7 @@ export function BootScreen() {
   const loaded = useStore(hardwareStore, (state) => state.loaded);
   const status = useStore(hardwareStore, (state) => state.hardware);
   const simulated = useStore(hardwareStore, (state) => state.simulated);
+  const mockMode = useStore(hardwareStore, (state) => state.mockMode);
   const [interfaceReady, setInterfaceReady] = useState(false);
   const [waitedTooLong, setWaitedTooLong] = useState(false);
 
@@ -39,7 +40,7 @@ export function BootScreen() {
           status: status.state === 'ready' ? 'ok' : 'note',
           label:
             status.state === 'ready'
-              ? describeHardware(status, simulated).label
+              ? describeHardware(status, simulated, mockMode).label
               : 'No Arduino connected',
         }
       : { key: 'hardware', status: 'running', label: 'Shared hardware service' };
@@ -48,7 +49,7 @@ export function BootScreen() {
       { key: 'engine', label: 'Arduino engine', status: loaded ? 'ok' : 'running' },
       hardwareCheck,
     ];
-  }, [interfaceReady, loaded, status, simulated]);
+  }, [interfaceReady, loaded, status, simulated, mockMode]);
 
   useEffect(() => {
     if (!loaded) return undefined;

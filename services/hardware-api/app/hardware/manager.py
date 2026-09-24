@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import logging
 import threading
+import time
 
 from ..bus import EventBus
 from ..config import MOCK_AUTO, MOCK_OFF, MOCK_ON, Settings
@@ -20,6 +21,7 @@ from .mock import MockBackend
 log = logging.getLogger(__name__)
 
 SCAN_INTERVAL = 2.5
+RETRY_INTERVAL = 8.0
 
 NO_HARDWARE_STATUS = {
     "state": "no-arduino",
@@ -42,6 +44,7 @@ class HardwareManager:
         self._thread: threading.Thread | None = None
         self._stopping = threading.Event()
         self._paused = False
+        self._last_retry = 0.0
 
     # -------------------------------------------------------------- lifecycle
 
@@ -311,6 +314,17 @@ class HardwareManager:
         port_present = isinstance(port, str) and any(
             candidate.port == port for candidate in devices
         )
+
+        if state == "disconnected" and port_present:
+            # Another program may have been holding the port (a serial monitor,
+            # or a second copy of the app). Keep trying quietly so a board that
+            # becomes available is picked up without any user action.
+            now = time.monotonic()
+            if now - self._last_retry >= RETRY_INTERVAL:
+                self._last_retry = now
+                log.info("retrying the Arduino on %s", port)
+                self.use_hardware(port)
+            return
 
         if state in {"disconnected", "no-arduino"} and not port_present:
             if device is not None:
