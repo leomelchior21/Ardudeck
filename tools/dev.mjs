@@ -70,12 +70,13 @@ if (runApi) {
 }
 
 if (runUi) {
-  process.stdout.write('[dev] UI   http://localhost:5173\n');
+  const uiPort = process.env.ARDUDECK_UI_PORT ?? '5173';
+  process.stdout.write(`[dev] UI   http://localhost:${uiPort}\n`);
   const npm = isWindows ? 'npm.cmd' : 'npm';
   launch('ui', npm, ['run', 'dev', '--workspace', '@ardudeck/ui'], {
     cwd: repoRoot,
     shell: isWindows,
-    env: { ...process.env, FORCE_COLOR: '1' },
+    env: { ...process.env, FORCE_COLOR: '1', ARDUDECK_UI_PORT: uiPort },
   });
 }
 

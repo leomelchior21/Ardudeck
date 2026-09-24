@@ -3,12 +3,13 @@
   "version": "0.2.0",
   "private": true,
   "description": "Ardu OS Windows desktop shell",
+  "author": "Leonardo Melchior Correa",
   "main": "main.cjs",
   "scripts": {
     "start": "electron ."
   },
   "devDependencies": {
-    "electron": "^44.4.3",
+    "electron": "44.4.3",
     "electron-builder": "^26.0.12"
   },
   "build": {
@@ -57,13 +58,17 @@
         "nsis",
         "portable"
       ],
-      "artifactName": "ArduOS-${version}-${arch}.${ext}"
+      "icon": "assets/icon.ico"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "shortcutName": "Ardu OS"
+      "shortcutName": "Ardu OS",
+      "artifactName": "ArduOS-Setup-${version}-${arch}.${ext}"
+    },
+    "portable": {
+      "artifactName": "ArduOS-Portable-${version}-${arch}.${ext}"
     }
   }
 }

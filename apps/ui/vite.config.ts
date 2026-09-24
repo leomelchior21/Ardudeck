@@ -14,7 +14,7 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5173,
+    port: Number(process.env.ARDUDECK_UI_PORT ?? 5173),
     strictPort: true,
     fs: { allow: [repoRoot] },
     proxy: {

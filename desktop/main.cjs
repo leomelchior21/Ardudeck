@@ -71,9 +71,14 @@ function findPython() {
 function resolveBackend() {
   if (app.isPackaged) {
     const resources = process.resourcesPath;
-    const executable = path.join(resources, 'backend', 'ardu-os-api.exe');
-    if (fs.existsSync(executable)) {
-      return { command: executable, args: [], cwd: path.dirname(executable), source: 'bundle' };
+    const bundled = [
+      path.join(resources, 'backend', 'ardu-os-api', 'ardu-os-api.exe'),
+      path.join(resources, 'backend', 'ardu-os-api.exe'),
+    ];
+    for (const executable of bundled) {
+      if (fs.existsSync(executable)) {
+        return { command: executable, args: [], cwd: path.dirname(executable), source: 'bundle' };
+      }
     }
     const source = path.join(resources, 'backend-src');
     if (fs.existsSync(source)) {
@@ -180,6 +185,7 @@ function errorPage(message) {
 
 async function boot() {
   const ok = await ensureBackend();
+  const windowIcon = path.join(__dirname, 'assets', 'icon.ico');
   mainWindow = new BrowserWindow({
     width: 1366,
     height: 768,
@@ -189,6 +195,7 @@ async function boot() {
     show: false,
     autoHideMenuBar: true,
     title: 'Ardu OS',
+    ...(fs.existsSync(windowIcon) ? { icon: windowIcon } : {}),
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,

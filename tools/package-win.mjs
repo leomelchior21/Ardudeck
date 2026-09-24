@@ -26,6 +26,9 @@ const backendDist = path.join(desktopDir, 'backend-dist');
 function run(command, args, options = {}) {
   process.stdout.write(`[package] ${command} ${args.join(' ')}\n`);
   const result = spawnSync(command, args, { stdio: 'inherit', ...options });
+  if (result.error) {
+    process.stdout.write(`[package] could not run ${command}: ${result.error.message}\n`);
+  }
   return result.status ?? 1;
 }
 
@@ -34,9 +37,13 @@ function hasPyInstaller(python) {
   return probe.status === 0;
 }
 
-if (run(isWindows ? 'npm.cmd' : 'npm', ['run', 'build'], { cwd: repoRoot }) !== 0) {
+if (
+  run(isWindows ? 'npm.cmd' : 'npm', ['run', 'build'], { cwd: repoRoot, shell: isWindows }) !== 0
+) {
   process.exit(1);
 }
+
+run(process.execPath, [path.join(here, 'make-icon.mjs')], { cwd: repoRoot });
 
 mkdirSync(backendDist, { recursive: true });
 
@@ -71,11 +78,15 @@ if (hasPyInstaller(venvPython())) {
       path.join(desktopDir, '.pyinstaller'),
       '--specpath',
       path.join(desktopDir, '.pyinstaller'),
-      '--paths',
-      apiDir,
-      '--collect-submodules',
-      'serial',
-      entry,
+       '--paths',
+       apiDir,
+       '--collect-submodules',
+       'serial',
+       '--collect-submodules',
+       'uvicorn',
+       '--collect-submodules',
+       'websockets',
+       entry,
     ],
     { cwd: apiDir },
   );
@@ -102,5 +113,5 @@ if (!existsSync(builder)) {
   process.exit(1);
 }
 
-const status = run(builder, ['--win', 'nsis', 'portable'], { cwd: desktopDir });
+const status = run(builder, ['--win', 'nsis', 'portable'], { cwd: desktopDir, shell: isWindows });
 process.exit(status);
